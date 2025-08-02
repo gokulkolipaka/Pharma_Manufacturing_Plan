@@ -1,1 +1,0 @@
-# Pharma_Manufacturing_Plan
