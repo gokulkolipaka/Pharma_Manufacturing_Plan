@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaCorp Manufacturing - Resource Planning System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>PharmaCorp Manufacturing</h1>
+                <p>Resource Planning System</p>
+            </div>
+            <div class="login-form-container">
+                <div class="login-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="signup">Sign Up</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form active">
+                    <div class="form-group">
+                        <label for="login-username" class="form-label">Username</label>
+                        <input type="text" id="login-username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-username" class="form-label">Username</label>
+                        <input type="text" id="signup-username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email" class="form-label">Email</label>
+                        <input type="email" id="signup-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password" class="form-label">Password</label>
+                        <input type="password" id="signup-password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-role" class="form-label">Role</label>
+                        <select id="signup-role" class="form-control" required>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Sign Up</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="password-change-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Password Required</h3>
+                <p>Please change your default password to continue</p>
+            </div>
+            <form id="password-change-form">
+                <div class="form-group">
+                    <label for="new-password" class="form-label">New Password</label>
+                    <input type="password" id="new-password" class="form-control" required 
+                           minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&].{7,}$">
+                    <small>Password must be at least 8 characters with uppercase, lowercase, number and special character</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm-password" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="company-info">
+                    <div class="logo-container">
+                        <img id="company-logo" src="" alt="Company Logo" class="hidden">
+                        <div id="logo-placeholder" class="logo-placeholder">
+                            <span>Upload Logo</span>
+                        </div>
+                        <input type="file" id="logo-upload" accept="image/*" class="hidden">
+                    </div>
+                    <div class="company-details">
+                        <h1 id="company-name" class="editable-company-name">PharmaCorp Manufacturing</h1>
+                        <input type="text" id="company-name-input" class="company-name-input hidden">
+                    </div>
+                </div>
+                <div class="user-info">
+                    <span id="user-welcome">Welcome, User</span>
+                    <button id="logout-btn" class="btn btn--secondary btn--sm">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <div class="nav-content">
+                <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+                <button class="nav-btn" data-view="production">Production Planning</button>
+                <button class="nav-btn" data-view="calendar">Equipment Calendar</button>
+                <button class="nav-btn" data-view="stock">Stock Management</button>
+                <button class="nav-btn" data-view="reports">Reports</button>
+                <button class="nav-btn admin-only hidden" data-view="users">User Management</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Production Overview</h3>
+                        <div class="stat-value" id="total-production">0</div>
+                        <div class="stat-label">Units This Month</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Equipment Status</h3>
+                        <div class="equipment-status">
+                            <div class="status-item">
+                                <span class="status status--success">Available: <span id="available-equipment">0</span></span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status status--warning">In Use: <span id="busy-equipment">0</span></span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status status--error">Maintenance: <span id="maintenance-equipment">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Stock Alerts</h3>
+                        <div id="stock-alerts" class="alerts-container">
+                            <!-- Stock alerts will be populated here -->
+                        </div>
+                    </div>
+                    <div class="dashboard-card full-width">
+                        <h3>Production Analytics</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="production-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Planning View -->
+            <div id="production-view" class="view">
+                <div class="view-header">
+                    <h2>Production Planning</h2>
+                    <button id="add-production-btn" class="btn btn--primary">Add Production Plan</button>
+                </div>
+                <div class="production-grid">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>Current Production Plans</h3>
+                            <div id="production-plans-list">
+                                <!-- Production plans will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Calendar View -->
+            <div id="calendar-view" class="view">
+                <div class="view-header">
+                    <h2>Equipment Calendar</h2>
+                    <div class="calendar-controls">
+                        <button id="prev-month" class="btn btn--secondary btn--sm">&lt;</button>
+                        <span id="current-month">March 2025</span>
+                        <button id="next-month" class="btn btn--secondary btn--sm">&gt;</button>
+                    </div>
+                </div>
+                <div class="calendar-container">
+                    <div id="equipment-calendar" class="equipment-calendar">
+                        <!-- Calendar will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Management View -->
+            <div id="stock-view" class="view">
+                <div class="view-header">
+                    <h2>Stock Management</h2>
+                    <div class="stock-actions">
+                        <button id="upload-stock-btn" class="btn btn--secondary">Upload Excel</button>
+                        <button id="add-material-btn" class="btn btn--primary">Add Material</button>
+                    </div>
+                </div>
+                <div class="stock-grid">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>Raw Materials Inventory</h3>
+                            <div id="materials-list">
+                                <!-- Materials list will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" class="hidden">
+            </div>
+
+            <!-- Reports View -->
+            <div id="reports-view" class="view">
+                <div class="view-header">
+                    <h2>Reports & Analytics</h2>
+                    <div class="report-actions">
+                        <button id="export-csv-btn" class="btn btn--secondary">Export CSV</button>
+                        <button id="export-pdf-btn" class="btn btn--secondary">Export PDF</button>
+                        <button id="print-report-btn" class="btn btn--outline">Print</button>
+                    </div>
+                </div>
+                <div class="reports-grid">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>Production Summary</h3>
+                            <div id="production-summary">
+                                <!-- Production summary will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>Equipment Utilization</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="utilization-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management View -->
+            <div id="users-view" class="view">
+                <div class="view-header">
+                    <h2>User Management</h2>
+                    <button id="add-user-btn" class="btn btn--primary">Add User</button>
+                </div>
+                <div class="users-grid">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>System Users</h3>
+                            <div id="users-list">
+                                <!-- Users list will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Production Plan Modal -->
+    <div id="add-production-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Production Plan</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="add-production-form">
+                <div class="form-group">
+                    <label for="drug-name" class="form-label">Drug Name</label>
+                    <input type="text" id="drug-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <input type="number" id="quantity" class="form-control" required min="1">
+                </div>
+                <div class="form-group">
+                    <label for="target-month" class="form-label">Target Month</label>
+                    <select id="target-month" class="form-control" required>
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March" selected>March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="target-year" class="form-label">Target Year</label>
+                    <input type="number" id="target-year" class="form-control" value="2025" required min="2025">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Add Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Cell Edit Modal -->
+    <div id="calendar-edit-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Schedule</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="calendar-edit-form">
+                <div class="form-group">
+                    <label for="batch-number" class="form-label">Batch Number</label>
+                    <input type="text" id="batch-number" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-notes" class="form-label">Notes</label>
+                    <textarea id="schedule-notes" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-status" class="form-label">Status</label>
+                    <select id="schedule-status" class="form-control">
+                        <option value="Available">Available</option>
+                        <option value="Reserved">Reserved</option>
+                        <option value="In Use">In Use</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Cleaning">Cleaning</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Material Modal -->
+    <div id="add-material-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Raw Material</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="add-material-form">
+                <div class="form-group">
+                    <label for="material-name" class="form-label">Material Name</label>
+                    <input type="text" id="material-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="current-stock" class="form-label">Current Stock</label>
+                    <input type="number" id="current-stock" class="form-control" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="minimum-stock" class="form-label">Minimum Stock</label>
+                    <input type="number" id="minimum-stock" class="form-control" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="stock-unit" class="form-label">Unit</label>
+                    <select id="stock-unit" class="form-control" required>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="g">Grams (g)</option>
+                        <option value="L">Liters (L)</option>
+                        <option value="mL">Milliliters (mL)</option>
+                        <option value="units">Units</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Add Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
