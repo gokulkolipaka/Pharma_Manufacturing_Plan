@@ -92,6 +92,7 @@
 
     <!-- Main content area -->
     <main class="app-main">
+
       <!-- DASHBOARD -->
       <section class="view active" id="dashboard-view">
         <div class="view-header">
@@ -137,13 +138,13 @@
           <h2>Equipment Calendar</h2>
           <div class="calendar-controls">
             <button class="btn btn--secondary" id="prev-month">&#8592; Prev</button>
-            <span id="calendar-month-label">March 2025</span>
+            <span id="calendar-month-label"></span>
             <button class="btn btn--secondary" id="next-month">Next &#8594;</button>
             <button class="btn btn--primary admin-only" id="add-equipment-calendar" style="margin-left: 20px;">Add Equipment</button>
           </div>
         </div>
         <div class="calendar-container">
-          <div id="equipment-calendar"></div>
+          <div id="equipment-calendar" class="equipment-calendar"></div>
         </div>
       </section>
 
@@ -187,10 +188,10 @@
     </main>
   </div>
   
-  <!-- TOAST NOTIFICATIONS -->
+  <!-- Toast Notifications -->
   <div class="toast-container" id="toast-container"></div>
-  
-  <!-- MODALS -->
+
+  <!-- Modals -->
 
   <!-- Change Password -->
   <div class="modal hidden" id="password-change-modal">
@@ -216,7 +217,7 @@
     </div>
   </div>
 
-  <!-- Add/Edit Production Plan -->
+  <!-- Production Plan Modal -->
   <div class="modal hidden" id="add-production-modal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
@@ -248,7 +249,7 @@
     </div>
   </div>
   
-  <!-- Add/Edit Material -->
+  <!-- Material Modal -->
   <div class="modal hidden" id="add-material-modal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
@@ -280,7 +281,7 @@
     </div>
   </div>
 
-  <!-- Add/Edit User -->
+  <!-- User Modal -->
   <div class="modal hidden" id="add-user-modal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
@@ -316,7 +317,7 @@
     </div>
   </div>
 
-  <!-- Equipment Modal (Add/Edit) -->
+  <!-- Equipment Modal -->
   <div class="modal hidden" id="equipment-modal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
@@ -411,7 +412,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
 </body>
