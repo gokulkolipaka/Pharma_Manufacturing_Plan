@@ -6,6 +6,71 @@
     <title>PharmaCorp Manufacturing - Resource Planning System</title>
     <link rel="stylesheet" href="style.css">
 </head>
+    <!-- Add these just before </body> in index.html -->
+
+<!-- Equipment Modal (Add/Edit) -->
+<div class="modal hidden" id="equipment-modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="equipment-modal-title">Add Equipment</h3>
+      <button class="modal-close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <form id="equipment-form">
+      <input type="hidden" id="equipment-id">
+      <div class="form-group">
+        <label class="form-label" for="equipment-name">Name</label>
+        <input class="form-control" id="equipment-name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="equipment-type">Type</label>
+        <input class="form-control" id="equipment-type" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="equipment-location">Location</label>
+        <input class="form-control" id="equipment-location">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="equipment-status">Status</label>
+        <select class="form-control" id="equipment-status">
+          <option value="Available">Available</option>
+          <option value="In Use">In Use</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn--primary" type="submit">Save</button>
+        <button class="btn btn--secondary modal-close" type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Dashboard Customize Modal (Super Admin only) -->
+<div class="modal hidden" id="dashboard-edit-modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Customize Dashboard</h3>
+      <button class="modal-close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <form id="dashboard-settings-form">
+      <label><input type="checkbox" id="dash-prod-trend"> Show Production Trend</label><br>
+      <label><input type="checkbox" id="dash-utilization"> Show Equipment Utilization</label><br>
+      <label><input type="checkbox" id="dash-stock-alerts"> Show Stock Alerts</label><br>
+      <div class="modal-actions">
+        <button class="btn btn--primary" type="submit">Save</button>
+        <button class="btn btn--secondary modal-close" type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Equipment Management Panel (add this where you want equipment list, e.g. after production plans section) -->
+<div id="equipment-panel"></div>
+
+<!-- Dashboard customize button (put just above or inside your dashboard area if possible) -->
+<div id="dashboard-customize-btn"></div>
 <body>
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
