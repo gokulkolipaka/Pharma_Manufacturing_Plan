@@ -1305,4 +1305,64 @@ document.addEventListener('keydown', (e) => {
             app.hideModal(modal.id);
         });
     }
+    // DASHBOARD CUSTOMIZATION
+
+PharmaPlanningApp.prototype.renderDashboardCustomizeBtn = function() {
+  // Show button only for superadmin on dashboard view
+  const user = this.currentUser;
+  const cont = document.getElementById('dashboard-customize-btn');
+  if (user && user.role === 'superadmin') {
+    cont.innerHTML = `<button class="btn btn--secondary btn--sm" id="customize-dashboard-btn" style="float:right;">Customize Dashboard</button>`;
+    document.getElementById('customize-dashboard-btn').onclick = function() {
+      // Load dashboard settings
+      const dft = { showProductionTrend: true, showUtilization: true, showStockAlerts: true };
+      const settings = JSON.parse(localStorage.getItem('dashboard_settings') || JSON.stringify(dft));
+      document.getElementById('dash-prod-trend').checked = !!settings.showProductionTrend;
+      document.getElementById('dash-utilization').checked = !!settings.showUtilization;
+      document.getElementById('dash-stock-alerts').checked = !!settings.showStockAlerts;
+      document.getElementById('dashboard-edit-modal').classList.remove('hidden');
+    }
+  } else {
+    cont.innerHTML = '';
+  }
+}
+
+document.getElementById('dashboard-settings-form').onsubmit = function(e) {
+  e.preventDefault();
+  const settings = {
+    showProductionTrend: document.getElementById('dash-prod-trend').checked,
+    showUtilization: document.getElementById('dash-utilization').checked,
+    showStockAlerts: document.getElementById('dash-stock-alerts').checked
+  };
+  localStorage.setItem('dashboard_settings', JSON.stringify(settings));
+  document.getElementById('dashboard-edit-modal').classList.add('hidden');
+  if (window.pharmaApp && window.pharmaApp.loadDashboard) window.pharmaApp.loadDashboard();
+};
+
+// You must update your loadDashboard code so it uses these settings:
+
+// In app.js, inside your PharmaPlanningApp.prototype.loadDashboard function at the start:
+PharmaPlanningApp.prototype.loadDashboard = function() {
+  if(document.getElementById('dashboard-customize-btn')) this.renderDashboardCustomizeBtn();
+  // Values for show/hide
+  const settings = JSON.parse(localStorage.getItem('dashboard_settings') ||
+    '{"showProductionTrend":true,"showUtilization":true,"showStockAlerts":true}');
+
+  // Then, after this, add this where you set/refresh the dashboard stats:
+  if(document.getElementById('production-trend-card'))
+    document.getElementById('production-trend-card').style.display = settings.showProductionTrend ? '' : 'none';
+  if(document.getElementById('utilization-card'))
+    document.getElementById('utilization-card').style.display = settings.showUtilization ? '' : 'none';
+  if(document.getElementById('stock-alerts-card'))
+    document.getElementById('stock-alerts-card').style.display = settings.showStockAlerts ? '' : 'none';
+
+  // ...rest of dashboard stats as before...
+  // (all your existing code remains, you only add the above where you set card visibility)
+};
+
+// Ensure you call, after logging in or switching view:
+if(window.pharmaApp) {
+  window.pharmaApp.renderEquipmentPanel && window.pharmaApp.renderEquipmentPanel();
+  window.pharmaApp.renderDashboardCustomizeBtn && window.pharmaApp.renderDashboardCustomizeBtn();
+}
 });
