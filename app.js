@@ -259,6 +259,45 @@ class PharmaApp {
             });
         }
 
+        // **FIXED: Modal triggers**
+        document.getElementById('addProductionBtn')?.addEventListener('click', () => this.openModal('productionModal'));
+        document.getElementById('addEquipmentBtn')?.addEventListener('click', () => this.openModal('equipmentModal'));
+        document.getElementById('addMaterialBtn')?.addEventListener('click', () => this.openModal('materialModal'));
+        document.getElementById('addUserBtn')?.addEventListener('click', () => this.openModal('userModal'));
+
+        // Calendar navigation
+        document.getElementById('prevMonth')?.addEventListener('click', () => this.changeMonth(-1));
+        document.getElementById('nextMonth')?.addEventListener('click', () => this.changeMonth(1));
+
+        // Excel upload
+        document.getElementById('uploadExcelBtn')?.addEventListener('click', () => {
+            document.getElementById('excelUpload')?.click();
+        });
+        document.getElementById('excelUpload')?.addEventListener('change', (e) => this.handleExcelUpload(e));
+
+        // **FIXED: Reports**
+        document.getElementById('exportCSV')?.addEventListener('click', () => this.exportCSV());
+        document.getElementById('exportPDF')?.addEventListener('click', () => this.exportPDF());
+        document.getElementById('printReport')?.addEventListener('click', () => window.print());
+
+        // **FIXED: Form submissions**
+        document.getElementById('productionForm')?.addEventListener('submit', (e) => this.addProductionPlan(e));
+        document.getElementById('equipmentForm')?.addEventListener('submit', (e) => this.saveEquipment(e));
+        document.getElementById('materialForm')?.addEventListener('submit', (e) => this.addMaterial(e));
+        document.getElementById('userForm')?.addEventListener('submit', (e) => this.addUser(e));
+        document.getElementById('calendarForm')?.addEventListener('submit', (e) => this.saveSchedule(e));
+
+        // Calendar and schedule actions
+        document.getElementById('clearSchedule')?.addEventListener('click', () => this.clearSchedule());
+
+        // **FIXED: Modal close handlers**
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                if (modal) this.closeModal(modal.id);
+            });
+        });
+
         // Dashboard data info clicks
         document.querySelectorAll('.dashboard-card.clickable').forEach(card => {
             card.addEventListener('click', () => this.showDataInfo(card));
@@ -267,7 +306,7 @@ class PharmaApp {
         console.log('All event listeners attached successfully');
     }
 
-    // **FIXED: Authentication methods**
+    // Authentication methods
     checkAuth() {
         const savedUser = localStorage.getItem('pharma_current_user');
         if (savedUser) {
@@ -411,7 +450,7 @@ class PharmaApp {
         this.showToast('Logged out successfully', 'info');
     }
 
-    // **FIXED: UI State Management**
+    // UI State Management
     showLogin() {
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
@@ -702,161 +741,646 @@ class PharmaApp {
         const source = card.dataset.source;
         const formula = card.dataset.formula;
         
-        this.showToast(`📊 Data Source: ${source}\n🔢 Formula: ${formula}`, 'info');
+        let data = [];
+        let lastUpdated = 'Unknown';
+        
+        switch(source) {
+            case 'production_plans':
+                data = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+                lastUpdated = data.length ? new Date(Math.max(...data.map(p => new Date(p.createdAt)))).toLocaleString() : 'No data';
+                break;
+            case 'equipment':
+                data = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
+                lastUpdated = 'Static data';
+                break;
+            case 'materials':
+                data = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+                lastUpdated = data.length ? new Date(Math.max(...data.map(m => new Date(m.lastUpdated)))).toLocaleString() : 'No data';
+                break;
+        }
+
+        document.getElementById('dataSource').textContent = `localStorage.pharma_${source}`;
+        document.getElementById('dataFormula').textContent = formula;
+        document.getElementById('lastUpdated').textContent = lastUpdated;
+        document.getElementById('recordCount').textContent = `${data.length} records`;
+        
+        this.openModal('dataInfoModal');
     }
 
-    // Placeholder methods for other views
+    // **FIXED: Production Plans**
     loadProductionPlans() {
+        const plans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
         const container = document.getElementById('productionPlansList');
-        if (container) {
-            container.innerHTML = '<p>Production plans feature coming soon...</p>';
+        
+        if (plans.length === 0) {
+            container.innerHTML = '<p>No production plans yet. Click "Add Production Plan" to get started.</p>';
+            return;
+        }
+
+        container.innerHTML = plans.map(plan => `
+            <div class="production-item">
+                <div class="item-info">
+                    <h4>${plan.drugName}</h4>
+                    <p>Quantity: ${plan.quantity.toLocaleString()} units | Target: ${plan.month} ${plan.year} | Status: ${plan.status}</p>
+                    <small>Requested by: ${plan.requestedBy}</small>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-secondary" onclick="pharmaApp.editProductionPlan(${plan.id})">Edit</button>
+                    <button class="btn-warning" onclick="pharmaApp.deleteProductionPlan(${plan.id})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    addProductionPlan(e) {
+        e.preventDefault();
+        
+        const drugName = document.getElementById('drugName').value.trim();
+        const quantity = parseInt(document.getElementById('drugQuantity').value);
+        const month = document.getElementById('targetMonth').value;
+        const year = parseInt(document.getElementById('targetYear').value);
+
+        // Check material availability
+        const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+        const insufficientMaterials = materials.filter(m => m.currentStock <= m.minimumStock);
+        
+        if (insufficientMaterials.length > 0) {
+            const confirmProceed = confirm(`Warning: The following materials are low in stock:\n${insufficientMaterials.map(m => m.name).join(', ')}\n\nDo you want to proceed anyway?`);
+            if (!confirmProceed) return;
+        }
+
+        const newPlan = {
+            id: Date.now(),
+            drugName,
+            quantity,
+            month,
+            year,
+            status: 'Planned',
+            requestedBy: this.currentUser.username,
+            createdAt: new Date().toISOString()
+        };
+
+        const plans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+        plans.push(newPlan);
+        localStorage.setItem('pharma_production_plans', JSON.stringify(plans));
+
+        this.closeModal('productionModal');
+        document.getElementById('productionForm').reset();
+        this.loadProductionPlans();
+        this.showToast('Production plan added successfully!', 'success');
+    }
+
+    deleteProductionPlan(id) {
+        if (confirm('Are you sure you want to delete this production plan?')) {
+            const plans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+            const filteredPlans = plans.filter(plan => plan.id !== id);
+            localStorage.setItem('pharma_production_plans', JSON.stringify(filteredPlans));
+            this.loadProductionPlans();
+            this.showToast('Production plan deleted', 'info');
         }
     }
 
+    // **FIXED: Equipment Calendar - FULLY FUNCTIONAL**
     loadCalendar() {
-        const container = document.getElementById('equipmentCalendar');
-        if (container) {
-            container.innerHTML = '<p>Equipment calendar feature coming soon...</p>';
-        }
-    }
-
-    loadStockManagement() {
-        const container = document.getElementById('materialsList');
-        if (container) {
-            container.innerHTML = '<p>Stock management feature coming soon...</p>';
-        }
-    }
-
-    loadReports() {
-        const container = document.getElementById('reportsList');
-        if (container) {
-            container.innerHTML = '<p>Reports feature coming soon...</p>';
-        }
-    }
-
-    loadUserManagement() {
-        const container = document.getElementById('usersList');
-        if (container) {
-            if (this.currentUser.role !== 'superadmin') {
-                container.innerHTML = '<p>Access denied. Only Super Admin can manage users.</p>';
-            } else {
-                container.innerHTML = '<p>User management feature coming soon...</p>';
-            }
-        }
-    }
-
-    // Company management
-    editCompanyName() {
-        const nameEl = document.getElementById('companyName');
-        const inputEl = document.getElementById('companyNameInput');
+        const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
+        const calendar = JSON.parse(localStorage.getItem('pharma_calendar') || '[]');
         
-        if (nameEl && inputEl) {
-            inputEl.value = nameEl.textContent;
-            nameEl.classList.add('hidden');
-            inputEl.classList.remove('hidden');
-            inputEl.focus();
+        // Update month display
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthYearEl = document.getElementById('currentMonthYear');
+        if (monthYearEl) {
+            monthYearEl.textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
         }
-    }
 
-    saveCompanyName() {
-        const nameEl = document.getElementById('companyName');
-        const inputEl = document.getElementById('companyNameInput');
+        const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+        const calendarContainer = document.getElementById('equipmentCalendar');
         
-        if (nameEl && inputEl) {
-            const newName = inputEl.value.trim();
-            if (newName) {
-                nameEl.textContent = newName;
-                
-                const company = JSON.parse(localStorage.getItem('pharma_company') || '{}');
-                company.name = newName;
-                localStorage.setItem('pharma_company', JSON.stringify(company));
-                
-                this.showToast('Company name updated successfully!', 'success');
-            }
+        if (!calendarContainer) return;
+        
+        // Set grid columns: equipment header + days
+        calendarContainer.style.gridTemplateColumns = `120px repeat(${daysInMonth}, 60px)`;
+        
+        // Clear container
+        calendarContainer.innerHTML = '';
+
+        // Add header row
+        calendarContainer.innerHTML += '<div class="calendar-header">Equipment</div>';
+        for (let day = 1; day <= daysInMonth; day++) {
+            calendarContainer.innerHTML += `<div class="calendar-header">${day}</div>`;
+        }
+
+        // Add equipment rows
+        equipment.forEach(eq => {
+            // Equipment name header
+            const canEdit = this.currentUser.role === 'superadmin';
+            const editHandler = canEdit ? `ondblclick="pharmaApp.editEquipmentName(${eq.id})"` : '';
+            const editTitle = canEdit ? 'Double-click to edit (Super Admin only)' : 'Read-only';
             
-            nameEl.classList.remove('hidden');
-            inputEl.classList.add('hidden');
-        }
-    }
+            calendarContainer.innerHTML += `
+                <div class="equipment-header" ${editHandler} title="${editTitle}">
+                    ${eq.name}
+                </div>
+            `;
 
-    handleLogoUpload(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const logoUrl = event.target.result;
-                const logoEl = document.getElementById('companyLogo');
-                const placeholderEl = document.getElementById('logoPlaceholder');
+            // Day cells
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cellKey = `${eq.id}-${this.currentYear}-${this.currentMonth}-${day}`;
+                const schedule = calendar.find(s => s.key === cellKey);
                 
-                if (logoEl && placeholderEl) {
-                    logoEl.src = logoUrl;
-                    logoEl.classList.remove('hidden');
-                    placeholderEl.style.display = 'none';
-                    
-                    const company = JSON.parse(localStorage.getItem('pharma_company') || '{}');
-                    company.logoUrl = logoUrl;
-                    localStorage.setItem('pharma_company', JSON.stringify(company));
-                    
-                    this.showToast('Company logo updated successfully!', 'success');
+                let cellContent = '';
+                let cellClass = 'calendar-cell';
+                
+                if (schedule) {
+                    cellClass += ` ${schedule.type}`;
+                    cellContent = `
+                        <div class="batch-info">${schedule.batchNumber || ''}</div>
+                        <div class="batch-notes">${schedule.notes || ''}</div>
+                    `;
                 }
+
+                // Check for conflicts (multiple schedules on same day)
+                const conflictSchedules = calendar.filter(s => 
+                    s.equipmentId === eq.id && 
+                    s.year === this.currentYear && 
+                    s.month === this.currentMonth && 
+                    s.day === day
+                );
+
+                if (conflictSchedules.length > 1) {
+                    cellClass += ' conflict';
+                }
+
+                // Add click handler for admin/superadmin
+                const canSchedule = ['admin', 'superadmin'].includes(this.currentUser.role);
+                const clickHandler = canSchedule ? `onclick="pharmaApp.editSchedule(${eq.id}, ${day})"` : '';
+                const clickTitle = canSchedule ? 'Click to edit schedule' : 'Read-only';
+                
+                calendarContainer.innerHTML += `
+                    <div class="${cellClass}" ${clickHandler}
+                         data-equipment-id="${eq.id}" 
+                         data-day="${day}"
+                         title="${clickTitle}">
+                        ${cellContent}
+                    </div>
+                `;
+            }
+        });
+    }
+
+    changeMonth(direction) {
+        this.currentMonth += direction;
+        
+        if (this.currentMonth > 11) {
+            this.currentMonth = 0;
+            this.currentYear++;
+        } else if (this.currentMonth < 0) {
+            this.currentMonth = 11;
+            this.currentYear--;
+        }
+        
+        this.loadCalendar();
+    }
+
+    editEquipmentName(equipmentId) {
+        if (this.currentUser.role !== 'superadmin') {
+            this.showToast('Only Super Admin can edit equipment names', 'error');
+            return;
+        }
+
+        const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
+        const eq = equipment.find(e => e.id === equipmentId);
+        
+        if (eq) {
+            const newName = prompt('Edit equipment name:', eq.name);
+            if (newName && newName.trim() !== eq.name) {
+                eq.name = newName.trim();
+                localStorage.setItem('pharma_equipment', JSON.stringify(equipment));
+                this.loadCalendar();
+                this.showToast('Equipment name updated', 'success');
+            }
+        }
+    }
+
+    editSchedule(equipmentId, day) {
+        if (!['admin', 'superadmin'].includes(this.currentUser.role)) {
+            this.showToast('You do not have permission to edit schedules', 'error');
+            return;
+        }
+
+        const calendar = JSON.parse(localStorage.getItem('pharma_calendar') || '[]');
+        const cellKey = `${equipmentId}-${this.currentYear}-${this.currentMonth}-${day}`;
+        const schedule = calendar.find(s => s.key === cellKey);
+
+        // Populate form
+        document.getElementById('scheduleEquipmentId').value = equipmentId;
+        document.getElementById('scheduleDate').value = `${this.currentYear}-${this.currentMonth}-${day}`;
+        document.getElementById('activityType').value = schedule?.type || '';
+        document.getElementById('batchNumber').value = schedule?.batchNumber || '';
+        document.getElementById('activityNotes').value = schedule?.notes || '';
+
+        this.openModal('calendarModal');
+    }
+
+    saveSchedule(e) {
+        e.preventDefault();
+        
+        const equipmentId = parseInt(document.getElementById('scheduleEquipmentId').value);
+        const [year, month, day] = document.getElementById('scheduleDate').value.split('-').map(Number);
+        const type = document.getElementById('activityType').value;
+        const batchNumber = document.getElementById('batchNumber').value.trim();
+        const notes = document.getElementById('activityNotes').value.trim();
+
+        const cellKey = `${equipmentId}-${year}-${month}-${day}`;
+        let calendar = JSON.parse(localStorage.getItem('pharma_calendar') || '[]');
+
+        // Remove existing schedule for this cell
+        calendar = calendar.filter(s => s.key !== cellKey);
+
+        // Add new schedule if type is selected
+        if (type) {
+            // Check for conflicts
+            const existingSchedule = calendar.find(s => 
+                s.equipmentId === equipmentId && 
+                s.year === year && 
+                s.month === month && 
+                s.day === day
+            );
+
+            if (existingSchedule) {
+                const override = confirm('This equipment already has a schedule for this day. Do you want to override it?');
+                if (!override) return;
+                
+                // Remove conflicting schedule
+                calendar = calendar.filter(s => 
+                    !(s.equipmentId === equipmentId && s.year === year && s.month === month && s.day === day)
+                );
+            }
+
+            const newSchedule = {
+                key: cellKey,
+                equipmentId,
+                year,
+                month,
+                day,
+                type,
+                batchNumber,
+                notes,
+                scheduledBy: this.currentUser.username,
+                scheduledAt: new Date().toISOString()
             };
-            reader.readAsDataURL(file);
+
+            calendar.push(newSchedule);
+        }
+
+        localStorage.setItem('pharma_calendar', JSON.stringify(calendar));
+        this.closeModal('calendarModal');
+        this.loadCalendar();
+        this.showToast('Schedule updated successfully', 'success');
+    }
+
+    clearSchedule() {
+        const equipmentId = parseInt(document.getElementById('scheduleEquipmentId').value);
+        const [year, month, day] = document.getElementById('scheduleDate').value.split('-').map(Number);
+        const cellKey = `${equipmentId}-${year}-${month}-${day}`;
+
+        let calendar = JSON.parse(localStorage.getItem('pharma_calendar') || '[]');
+        calendar = calendar.filter(s => s.key !== cellKey);
+        localStorage.setItem('pharma_calendar', JSON.stringify(calendar));
+
+        this.closeModal('calendarModal');
+        this.loadCalendar();
+        this.showToast('Schedule cleared', 'info');
+    }
+
+    // **FIXED: Stock Management**
+    loadStockManagement() {
+        const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+        const container = document.getElementById('materialsList');
+        
+        if (materials.length === 0) {
+            container.innerHTML = '<p>No materials in inventory. Click "Add Material" to get started.</p>';
+            return;
+        }
+
+        container.innerHTML = materials.map(material => {
+            const isLowStock = material.currentStock <= material.minimumStock;
+            const stockLevel = isLowStock ? 'critical' : (material.currentStock <= material.minimumStock * 1.5 ? 'low' : 'good');
+            
+            return `
+                <div class="material-item ${isLowStock ? 'low-stock' : ''}">
+                    <div class="item-info">
+                        <h4>${material.name}</h4>
+                        <p>Current: ${material.currentStock} ${material.unit} | Minimum: ${material.minimumStock} ${material.unit}</p>
+                        <div class="stock-level">
+                            <div class="stock-indicator ${stockLevel}"></div>
+                            <small>Lead time: ${material.leadTime} days | Last updated: ${new Date(material.lastUpdated).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-secondary" onclick="pharmaApp.editMaterial(${material.id})">Edit</button>
+                        <button class="btn-warning" onclick="pharmaApp.deleteMaterial(${material.id})">Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    addMaterial(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('materialName').value.trim();
+        const currentStock = parseFloat(document.getElementById('currentStock').value);
+        const minimumStock = parseFloat(document.getElementById('minimumStock').value);
+        const unit = document.getElementById('stockUnit').value;
+        const leadTime = parseInt(document.getElementById('leadTime').value);
+
+        const newMaterial = {
+            id: Date.now(),
+            name,
+            currentStock,
+            minimumStock,
+            unit,
+            leadTime,
+            lastUpdated: new Date().toISOString()
+        };
+
+        const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+        materials.push(newMaterial);
+        localStorage.setItem('pharma_materials', JSON.stringify(materials));
+
+        this.closeModal('materialModal');
+        document.getElementById('materialForm').reset();
+        this.loadStockManagement();
+        this.showToast('Material added successfully!', 'success');
+    }
+
+    deleteMaterial(id) {
+        if (confirm('Are you sure you want to delete this material?')) {
+            const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+            const filteredMaterials = materials.filter(material => material.id !== id);
+            localStorage.setItem('pharma_materials', JSON.stringify(filteredMaterials));
+            this.loadStockManagement();
+            this.showToast('Material deleted', 'info');
         }
     }
 
-    // Modal Management
-    openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-    }
+    handleExcelUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const text = event.target.result;
+                const lines = text.split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+                let updatedCount = 0;
+                let addedCount = 0;
 
-    // Toast Notifications
-    showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    if (values.length < headers.length) continue;
 
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
+                    const materialData = {};
+                    headers.forEach((header, index) => {
+                        materialData[header.toLowerCase()] = values[index];
+                    });
 
-        container.appendChild(toast);
+                    // Find existing material or create new one
+                    const existingIndex = materials.findIndex(m => 
+                        m.name.toLowerCase() === materialData.name?.toLowerCase()
+                    );
 
-        // Show toast
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
-
-        // Remove toast after 4 seconds
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (container.contains(toast)) {
-                    container.removeChild(toast);
+                    if (existingIndex !== -1) {
+                        // Update existing
+                        materials[existingIndex].currentStock = parseFloat(materialData.currentstock || materialData.stock);
+                        materials[existingIndex].lastUpdated = new Date().toISOString();
+                        updatedCount++;
+                    } else {
+                        // Add new
+                        const newMaterial = {
+                            id: Date.now() + Math.random(),
+                            name: materialData.name,
+                            currentStock: parseFloat(materialData.currentstock || materialData.stock || 0),
+                            minimumStock: parseFloat(materialData.minimumstock || materialData.minimum || 0),
+                            unit: materialData.unit || 'units',
+                            leadTime: parseInt(materialData.leadtime || 7),
+                            lastUpdated: new Date().toISOString()
+                        };
+                        materials.push(newMaterial);
+                        addedCount++;
+                    }
                 }
-            }, 300);
-        }, 4000);
+
+                localStorage.setItem('pharma_materials', JSON.stringify(materials));
+                this.loadStockManagement();
+                this.showToast(`Excel imported: ${updatedCount} updated, ${addedCount} added`, 'success');
+            } catch (error) {
+                console.error('Excel import error:', error);
+                this.showToast('Error importing Excel file. Please check format.', 'error');
+            }
+        };
+        
+        reader.readAsText(file);
     }
-}
 
-// Initialize the app when page loads
-let pharmaApp;
+    // **FIXED: Equipment Management**
+    saveEquipment(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('equipmentId').value;
+        const name = document.getElementById('equipmentName').value.trim();
+        const type = document.getElementById('equipmentType').value;
+        const location = document.getElementById('equipmentLocation').value.trim();
+        const status = document.getElementById('equipmentStatus').value;
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        pharmaApp = new PharmaApp();
-    });
-} else {
-    pharmaApp = new PharmaApp();
-}
+        const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
 
-// Make pharmaApp globally accessible for onclick handlers
-window.pharmaApp = pharmaApp;
+        if (id) {
+            // Edit existing
+            const index = equipment.findIndex(eq => eq.id == id);
+            if (index !== -1) {
+                equipment[index] = { id: parseInt(id), name, type, location, status };
+                this.showToast('Equipment updated successfully!', 'success');
+            }
+        } else {
+            // Add new
+            const newEquipment = {
+                id: Date.now(),
+                name,
+                type,
+                location,
+                status
+            };
+            equipment.push(newEquipment);
+            this.showToast('Equipment added successfully!', 'success');
+        }
+
+        localStorage.setItem('pharma_equipment', JSON.stringify(equipment));
+        this.closeModal('equipmentModal');
+        document.getElementById('equipmentForm').reset();
+        document.getElementById('equipmentId').value = '';
+        document.getElementById('equipmentModalTitle').textContent = 'Add Equipment';
+        
+        if (this.currentView === 'calendar') {
+            this.loadCalendar();
+        }
+    }
+
+    // **FIXED: User Management**
+    loadUserManagement() {
+        if (this.currentUser.role !== 'superadmin') {
+            const container = document.getElementById('usersList');
+            container.innerHTML = '<p>Access denied. Only Super Admin can manage users.</p>';
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
+        const container = document.getElementById('usersList');
+        
+        container.innerHTML = users.map(user => `
+            <div class="user-item">
+                <div class="item-info">
+                    <h4>${user.username}</h4>
+                    <p>${user.email} | Role: ${user.role}</p>
+                    <small>Created: ${new Date(user.createdAt).toLocaleDateString()}</small>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-secondary" onclick="pharmaApp.editUser(${user.id})">Edit</button>
+                    ${user.id !== this.currentUser.id ? `<button class="btn-warning" onclick="pharmaApp.deleteUser(${user.id})">Delete</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    addUser(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('newUsername').value.trim();
+        const email = document.getElementById('newUserEmail').value.trim();
+        const password = document.getElementById('newUserPassword').value;
+        const role = document.getElementById('newUserRole').value;
+
+        const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
+        
+        if (users.find(u => u.username === username)) {
+            this.showToast('Username already exists', 'error');
+            return;
+        }
+
+        const newUser = {
+            id: Date.now(),
+            username,
+            email,
+            password,
+            role,
+            mustChangePassword: true,
+            createdAt: new Date().toISOString()
+        };
+
+        users.push(newUser);
+        localStorage.setItem('pharma_users', JSON.stringify(users));
+
+        this.closeModal('userModal');
+        document.getElementById('userForm').reset();
+        this.loadUserManagement();
+        this.showToast('User added successfully!', 'success');
+    }
+
+    deleteUser(id) {
+        if (confirm('Are you sure you want to delete this user?')) {
+            const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
+            const filteredUsers = users.filter(user => user.id !== id);
+            localStorage.setItem('pharma_users', JSON.stringify(filteredUsers));
+            this.loadUserManagement();
+            this.showToast('User deleted', 'info');
+        }
+    }
+
+    // **FIXED: Reports**
+    loadReports() {
+        const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+        const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
+        const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+        const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
+
+        const totalUnits = productionPlans.reduce((sum, plan) => sum + plan.quantity, 0);
+        const activeEquipment = equipment.filter(eq => eq.status === 'Available').length;
+        const lowStockItems = materials.filter(m => m.currentStock <= m.minimumStock).length;
+
+        const container = document.getElementById('reportsList');
+        container.innerHTML = `
+            <div class="card">
+                <h3>📊 Production Summary</h3>
+                <div class="item-info">
+                    <p><strong>Total Units Planned:</strong> ${totalUnits.toLocaleString()}</p>
+                    <p><strong>Active Equipment:</strong> ${activeEquipment}</p>
+                    <p><strong>Total Equipment:</strong> ${equipment.length}</p>
+                    <p><strong>Low Stock Items:</strong> ${lowStockItems}</p>
+                    <p><strong>Total Materials:</strong> ${materials.length}</p>
+                    <p><strong>Total Users:</strong> ${users.length}</p>
+                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    exportCSV() {
+        try {
+            const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+            const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
+            const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Production Plans
+            csvContent += "Production Plans\n";
+            csvContent += "Drug Name,Quantity,Month,Year,Status,Requested By\n";
+            productionPlans.forEach(plan => {
+                csvContent += `${plan.drugName},${plan.quantity},${plan.month},${plan.year},${plan.status},${plan.requestedBy}\n`;
+            });
+            
+            csvContent += "\nEquipment\n";
+            csvContent += "Name,Type,Location,Status\n";
+            equipment.forEach(eq => {
+                csvContent += `${eq.name},${eq.type},${eq.location},${eq.status}\n`;
+            });
+            
+            csvContent += "\nMaterials\n";
+            csvContent += "Name,Current Stock,Minimum Stock,Unit,Lead Time\n";
+            materials.forEach(mat => {
+                csvContent += `${mat.name},${mat.currentStock},${mat.minimumStock},${mat.unit},${mat.leadTime}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `pharma_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showToast('CSV report downloaded successfully!', 'success');
+        } catch (error) {
+            console.error('CSV export error:', error);
+            this.showToast('Error exporting CSV', 'error');
+        }
+    }
+
+    exportPDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(20);
+            doc.text('Pharma Planning Report', 20, 30);
+            
+            doc.setFontSize(12);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 45);
+            doc.text(`Generated by: ${this.currentUser.username}`, 20, 55);
+            
+            const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
+            const equipment = JSON.parse(localStorage.getItem('pharma
