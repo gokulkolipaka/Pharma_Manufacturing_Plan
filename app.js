@@ -1,4 +1,3 @@
-// Application State Management
 class PharmaPlanningApp {
   constructor() {
     this.currentUser = null;
@@ -6,947 +5,309 @@ class PharmaPlanningApp {
     this.currentMonth = new Date().getMonth();
     this.currentYear = new Date().getFullYear();
     this.charts = {};
-    this.currentEditingCell = null;
-    this.initializeApp();
-  }
-
-  initializeApp() {
     this.initializeData();
     this.bindEvents();
-    this.checkAuthState();
+    this.checkAuth();
   }
 
-  // FIXED: Enhanced data initialization with better error handling
+  // Default sample data
   initializeData() {
-    try {
-      // Always reinitialize sample data to ensure it's available
-      const sampleUsers = [
-        {"id": 1, "username": "superadmin", "email": "super@pharma.com", "role": "superadmin", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()},
-        {"id": 2, "username": "admin1", "email": "admin@pharma.com", "role": "admin", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()},
-        {"id": 3, "username": "user1", "email": "user@pharma.com", "role": "user", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()}
+    if (!localStorage.getItem('pharma_users')) {
+      const users = [
+        {id:1,username:'superadmin',email:'super@pharma.com',role:'superadmin',password:'TempPass123!',mustChangePassword:true},
+        {id:2,username:'admin1',email:'admin@pharma.com',role:'admin',password:'TempPass123!',mustChangePassword:true},
+        {id:3,username:'user1',email:'user@pharma.com',role:'user',password:'TempPass123!',mustChangePassword:true}
       ];
-
-      const sampleCompany = {
-        "name": "PharmaCorp Manufacturing",
-        "logoUrl": ""
-      };
-
-      const sampleMaterials = [
-        {"id": 1, "name": "Active Ingredient A", "currentStock": 500, "minimumStock": 100, "unit": "kg", "lastUpdated": new Date().toISOString()},
-        {"id": 2, "name": "Excipient B", "currentStock": 50, "minimumStock": 150, "unit": "kg", "lastUpdated": new Date().toISOString()},
-        {"id": 3, "name": "Coating Material", "currentStock": 200, "minimumStock": 80, "unit": "kg", "lastUpdated": new Date().toISOString()}
-      ];
-
-      const sampleEquipment = [
-        {"id": 1, "name": "Tablet Press 1", "type": "Manufacturing", "status": "Available", "location": "Production Floor A"},
-        {"id": 2, "name": "Coating Machine", "type": "Manufacturing", "status": "Available", "location": "Production Floor B"},
-        {"id": 3, "name": "Blender Unit 1", "type": "Mixing", "status": "Maintenance", "location": "Production Floor A"},
-        {"id": 4, "name": "Granulator", "type": "Processing", "status": "Available", "location": "Production Floor A"},
-        {"id": 5, "name": "Capsule Filler", "type": "Manufacturing", "status": "In Use", "location": "Production Floor C"}
-      ];
-
-      const sampleProductionPlans = [
-        {"id": 1, "drugName": "Aspirin 100mg", "quantity": 10000, "month": "March", "year": 2025, "status": "Planned", "requestedBy": "BD Team", "createdDate": new Date().toISOString()},
-        {"id": 2, "drugName": "Vitamin C 500mg", "quantity": 5000, "month": "March", "year": 2025, "status": "In Progress", "requestedBy": "BD Team", "createdDate": new Date().toISOString()},
-        {"id": 3, "drugName": "Paracetamol 500mg", "quantity": 8000, "month": "April", "year": 2025, "status": "Planned", "requestedBy": "BD Team", "createdDate": new Date().toISOString()},
-        {"id": 4, "drugName": "Ibuprofen 200mg", "quantity": 12000, "month": "May", "year": 2025, "status": "Planned", "requestedBy": "BD Team", "createdDate": new Date().toISOString()}
-      ];
-
-      // Check and initialize data only if not exists or if corrupted
-      const existingUsers = localStorage.getItem('pharma_users');
-      if (!existingUsers) {
-        console.log('Initializing sample data...');
-        localStorage.setItem('pharma_users', JSON.stringify(sampleUsers));
-        localStorage.setItem('pharma_company', JSON.stringify(sampleCompany));
-        localStorage.setItem('pharma_materials', JSON.stringify(sampleMaterials));
-        localStorage.setItem('pharma_equipment', JSON.stringify(sampleEquipment));
-        localStorage.setItem('pharma_production_plans', JSON.stringify(sampleProductionPlans));
-        localStorage.setItem('pharma_calendar', JSON.stringify([]));
-        localStorage.setItem('pharma_alerts', JSON.stringify([]));
-        console.log('Sample data initialized successfully');
-      } else {
-        // Verify existing data is valid JSON
-        try {
-          const users = JSON.parse(existingUsers);
-          if (!Array.isArray(users) || users.length === 0) {
-            throw new Error('Invalid user data');
-          }
-          console.log('Existing data validated');
-        } catch (error) {
-          console.log('Corrupted data detected, reinitializing...');
-          localStorage.setItem('pharma_users', JSON.stringify(sampleUsers));
-          localStorage.setItem('pharma_company', JSON.stringify(sampleCompany));
-          localStorage.setItem('pharma_materials', JSON.stringify(sampleMaterials));
-          localStorage.setItem('pharma_equipment', JSON.stringify(sampleEquipment));
-          localStorage.setItem('pharma_production_plans', JSON.stringify(sampleProductionPlans));
-          localStorage.setItem('pharma_calendar', JSON.stringify([]));
-          localStorage.setItem('pharma_alerts', JSON.stringify([]));
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing data:', error);
-      // Force reset if there's any error
-      this.resetToDefaults();
-    }
-  }
-
-  // NEW: Reset to defaults method
-  resetToDefaults() {
-    try {
-      localStorage.clear();
-      const sampleUsers = [
-        {"id": 1, "username": "superadmin", "email": "super@pharma.com", "role": "superadmin", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()},
-        {"id": 2, "username": "admin1", "email": "admin@pharma.com", "role": "admin", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()},
-        {"id": 3, "username": "user1", "email": "user@pharma.com", "role": "user", "password": "TempPass123!", "mustChangePassword": true, "createdDate": new Date().toISOString()}
-      ];
-
-      localStorage.setItem('pharma_users', JSON.stringify(sampleUsers));
-      localStorage.setItem('pharma_company', JSON.stringify({"name": "PharmaCorp Manufacturing", "logoUrl": ""}));
-      localStorage.setItem('pharma_materials', JSON.stringify([]));
-      localStorage.setItem('pharma_equipment', JSON.stringify([]));
-      localStorage.setItem('pharma_production_plans', JSON.stringify([]));
-      localStorage.setItem('pharma_calendar', JSON.stringify([]));
-      localStorage.setItem('pharma_alerts', JSON.stringify([]));
-      
-      console.log('Data reset to defaults');
-    } catch (error) {
-      console.error('Failed to reset to defaults:', error);
+      localStorage.setItem('pharma_users', JSON.stringify(users));
+      localStorage.setItem('pharma_company', JSON.stringify({name:'PharmaCorp Manufacturing',logoUrl:''}));
+      const materials=[{id:1,name:'Ingredient A',currentStock:500,minimumStock:100,unit:'kg'}];
+      localStorage.setItem('pharma_materials',JSON.stringify(materials));
+      const equipment=[{id:1,name:'Tablet Press',type:'Manufacturing',status:'Available',location:'Floor A'}];
+      localStorage.setItem('pharma_equipment',JSON.stringify(equipment));
+      const plans=[{id:1,drugName:'Aspirin',quantity:10000,month:'Aug',year:new Date().getFullYear(),status:'Planned'}];
+      localStorage.setItem('pharma_production_plans',JSON.stringify(plans));
+      localStorage.setItem('pharma_calendar',JSON.stringify([]));
     }
   }
 
   bindEvents() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        this.attachEventListeners();
-      });
-    } else {
-      this.attachEventListeners();
-    }
-  }
-
-  attachEventListeners() {
-    // Authentication Events
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-    }
-
-    const signupForm = document.getElementById('signup-form');
-    if (signupForm) {
-      signupForm.addEventListener('submit', (e) => this.handleSignup(e));
-    }
-
-    const passwordChangeForm = document.getElementById('password-change-form');
-    if (passwordChangeForm) {
-      passwordChangeForm.addEventListener('submit', (e) => this.handlePasswordChange(e));
-    }
-
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => this.handleLogout());
-    }
-
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
-    });
-
-    // Navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => this.switchView(e.target.dataset.view));
-    });
-
-    // Company Management
-    const logoPlaceholder = document.getElementById('logo-placeholder');
-    if (logoPlaceholder) {
-      logoPlaceholder.addEventListener('click', () => {
-        const logoUpload = document.getElementById('logo-upload');
-        if (logoUpload) logoUpload.click();
-      });
-    }
-
-    const logoUpload = document.getElementById('logo-upload');
-    if (logoUpload) {
-      logoUpload.addEventListener('change', (e) => this.handleLogoUpload(e));
-    }
-
-    const companyName = document.getElementById('company-name');
-    if (companyName) {
-      companyName.addEventListener('click', () => this.enableCompanyNameEdit());
-    }
-
-    const companyNameInput = document.getElementById('company-name-input');
-    if (companyNameInput) {
-      companyNameInput.addEventListener('blur', () => this.saveCompanyName());
-      companyNameInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.saveCompanyName();
-      });
-    }
-
-    // Production Planning
-    const addProductionBtn = document.getElementById('add-production-btn');
-    if (addProductionBtn) {
-      addProductionBtn.addEventListener('click', () => this.showModal('add-production-modal'));
-    }
-
-    const addProductionForm = document.getElementById('add-production-form');
-    if (addProductionForm) {
-      addProductionForm.addEventListener('submit', (e) => this.handleAddProduction(e));
-    }
-
-    // Calendar Navigation - FIXED BUG
-    const prevMonthBtn = document.getElementById('prev-month');
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
-    }
-
-    const nextMonthBtn = document.getElementById('next-month');
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
-    }
-
-    // Equipment Management
-    const addEquipmentCalendarBtn = document.getElementById('add-equipment-calendar');
-    if (addEquipmentCalendarBtn) {
-      addEquipmentCalendarBtn.addEventListener('click', () => this.openEquipmentModal());
-    }
-
-    const calendarEditForm = document.getElementById('calendar-edit-form');
-    if (calendarEditForm) {
-      calendarEditForm.addEventListener('submit', (e) => this.handleCalendarEdit(e));
-    }
-
-    const clearScheduleBtn = document.getElementById('clear-schedule');
-    if (clearScheduleBtn) {
-      clearScheduleBtn.addEventListener('click', () => this.clearSchedule());
-    }
-
-    // Stock Management
-    const addMaterialBtn = document.getElementById('add-material-btn');
-    if (addMaterialBtn) {
-      addMaterialBtn.addEventListener('click', () => this.showModal('add-material-modal'));
-    }
-
-    const uploadStockBtn = document.getElementById('upload-stock-btn');
-    if (uploadStockBtn) {
-      uploadStockBtn.addEventListener('click', () => {
-        const excelUpload = document.getElementById('excel-upload');
-        if (excelUpload) excelUpload.click();
-      });
-    }
-
-    const excelUpload = document.getElementById('excel-upload');
-    if (excelUpload) {
-      excelUpload.addEventListener('change', (e) => this.handleExcelUpload(e));
-    }
-
-    const addMaterialForm = document.getElementById('add-material-form');
-    if (addMaterialForm) {
-      addMaterialForm.addEventListener('submit', (e) => this.handleAddMaterial(e));
-    }
-
-    // Reports
-    const exportCsvBtn = document.getElementById('export-csv-btn');
-    if (exportCsvBtn) {
-      exportCsvBtn.addEventListener('click', () => this.exportToCSV());
-    }
-
-    const exportPdfBtn = document.getElementById('export-pdf-btn');
-    if (exportPdfBtn) {
-      exportPdfBtn.addEventListener('click', () => this.exportToPDF());
-    }
-
-    const printReportBtn = document.getElementById('print-report-btn');
-    if (printReportBtn) {
-      printReportBtn.addEventListener('click', () => window.print());
-    }
-
-    // User Management
-    const addUserBtn = document.getElementById('add-user-btn');
-    if (addUserBtn) {
-      addUserBtn.addEventListener('click', () => this.showModal('add-user-modal'));
-    }
-
-    const addUserForm = document.getElementById('add-user-form');
-    if (addUserForm) {
-      addUserForm.addEventListener('submit', (e) => this.handleAddUser(e));
-    }
-
-    // Modal Events
-    document.querySelectorAll('.modal-close').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const modal = e.target.closest('.modal');
-        if (modal) {
-          this.hideModal(modal.id);
-        }
-      });
-    });
-
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-        const modal = e.target.closest('.modal');
-        if (modal) {
-          this.hideModal(modal.id);
-        }
-      });
-    });
-
-    // Equipment Form
-    const equipmentForm = document.getElementById('equipment-form');
-    if (equipmentForm) {
-      equipmentForm.addEventListener('submit', (e) => this.handleEquipmentSubmit(e));
-    }
-
-    // Dashboard Settings Form
-    const dashboardSettingsForm = document.getElementById('dashboard-settings-form');
-    if (dashboardSettingsForm) {
-      dashboardSettingsForm.addEventListener('submit', (e) => this.handleDashboardSettings(e));
-    }
-
-    // Dashboard card click events for data info
-    document.querySelectorAll('.clickable-card').forEach(card => {
-      card.addEventListener('click', (e) => this.showDataInfo(e.currentTarget));
-    });
-  }
-
-  checkAuthState() {
-    const savedUser = localStorage.getItem('pharma_current_user');
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser);
-        this.showMainApp();
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('pharma_current_user');
-        this.showLoginScreen();
-      }
-    } else {
-      this.showLoginScreen();
-    }
-  }
-
-  // FIXED: Enhanced login with better error handling and debugging
-  handleLogin(e) {
-    e.preventDefault();
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-
-    console.log('Login attempt:', { username, password: '*'.repeat(password.length) });
-
-    if (!username || !password) {
-      this.showToast('Please enter both username and password', 'error');
-      return;
-    }
-
-    try {
-      const usersData = localStorage.getItem('pharma_users');
-      console.log('Users data from localStorage:', usersData ? 'Found' : 'Not found');
-      
-      if (!usersData) {
-        console.log('No users data found, reinitializing...');
-        this.initializeData();
-        const newUsersData = localStorage.getItem('pharma_users');
-        if (!newUsersData) {
-          this.showToast('Failed to initialize user data. Please refresh the page.', 'error');
-          return;
-        }
-      }
-
-      const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
-      console.log('Parsed users:', users.length, 'users found');
-      
-      if (users.length === 0) {
-        console.log('No users found, reinitializing data...');
-        this.initializeData();
-        const newUsers = JSON.parse(localStorage.getItem('pharma_users') || '[]');
-        if (newUsers.length === 0) {
-          this.showToast('Failed to load user data. Please refresh the page.', 'error');
-          return;
-        }
-        users.push(...newUsers);
-      }
-
-      const user = users.find(u => u.username === username && u.password === password);
-      console.log('User found:', user ? 'Yes' : 'No');
-
-      if (user) {
-        console.log('Login successful for user:', user.username);
-        this.currentUser = user;
-        localStorage.setItem('pharma_current_user', JSON.stringify(user));
-
-        if (user.mustChangePassword) {
-          this.showToast('Login successful! Please change your password.', 'success');
-          setTimeout(() => {
-            this.showModal('password-change-modal');
-          }, 500);
-        } else {
-          this.showToast('Login successful!', 'success');
-          setTimeout(() => {
-            this.showMainApp();
-          }, 500);
-        }
-      } else {
-        console.log('Login failed - invalid credentials');
-        // Show available users for debugging (remove in production)
-        console.log('Available users:', users.map(u => ({ username: u.username, role: u.role })));
-        this.showToast('Invalid username or password', 'error');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      this.showToast('Login failed. Please try again.', 'error');
-    }
-  }
-
-  handleSignup(e) {
-    e.preventDefault();
-    const username = document.getElementById('signup-username').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const role = document.getElementById('signup-role').value;
-
-    if (!username || !email || !password) {
-      this.showToast('Please fill in all fields', 'error');
-      return;
-    }
-
-    try {
-      const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
-
-      if (users.find(u => u.username === username)) {
-        this.showToast('Username already exists', 'error');
-        return;
-      }
-
-      if (users.find(u => u.email === email)) {
-        this.showToast('Email already exists', 'error');
-        return;
-      }
-
-      const newUser = {
-        id: Date.now(),
-        username,
-        email,
-        password,
-        role,
-        mustChangePassword: true,
-        createdDate: new Date().toISOString()
+    document.addEventListener('DOMContentLoaded',()=>{
+      // Login/Signup
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>this.switchTab(btn.dataset.tab));
+      document.getElementById('login-form').onsubmit=e=>this.login(e);
+      document.getElementById('signup-form').onsubmit=e=>this.signup(e);
+      document.getElementById('logout-btn').onclick=()=>this.logout();
+      // Dark mode
+      document.getElementById('dark-toggle').onchange=e=>{
+        document.body.classList.toggle('dark', e.target.checked);
       };
+      // Nav
+      document.querySelectorAll('.nav-btn').forEach(btn=>btn.onclick=()=>this.switchView(btn.dataset.view));
+      // Dashboard info clicks
+      document.querySelectorAll('.clickable-card').forEach(card=>card.onclick=()=>this.showDataInfo(card));
+      // Company edit
+      document.getElementById('company-name').onclick=()=>this.editCompanyName();
+      document.getElementById('logo-placeholder').onclick=()=>document.getElementById('logo-upload').click();
+      document.getElementById('logo-upload').onchange=e=>this.uploadLogo(e);
+      // Add/edit actions...
+      // Month nav
+      document.getElementById('prev-month').onclick=()=>this.changeMonth(-1);
+      document.getElementById('next-month').onclick=()=>this.changeMonth(1);
+      // Add equipment
+      document.getElementById('add-equipment-btn').onclick=()=>this.showModal('equipment-modal');
+      // Form submissions
+      document.getElementById('add-production-form').onsubmit=e=>this.addProduction(e);
+      document.getElementById('add-material-form').onsubmit=e=>this.addMaterial(e);
+      document.getElementById('equipment-form').onsubmit=e=>this.saveEquipment(e);
+      document.getElementById('add-user-form').onsubmit=e=>this.addUser(e);
+      document.getElementById('dashboard-settings-form').onsubmit=e=>this.saveDashboardSettings(e);
+      // Modal closes
+      document.querySelectorAll('.modal-close').forEach(b=>b.onclick=e=>this.hideModal(b.closest('.modal').id));
+      document.querySelectorAll('.modal-overlay').forEach(o=>o.onclick=e=>this.hideModal(o.closest('.modal').id));
+      // Calendar cell click
+      document.getElementById('equipment-calendar').onclick=e=>{
+        const cell=e.target.closest('.calendar-cell');
+        if(cell) this.editCalendarCell(cell.dataset.equipmentId,cell.dataset.day);
+      };
+      document.getElementById('calendar-edit-form').onsubmit=e=>this.saveCalendar(e);
+      document.getElementById('clear-schedule').onclick=()=>this.clearSchedule();
+      // Initial load
+      this.checkAuth();
+    });
+  }
 
-      users.push(newUser);
-      localStorage.setItem('pharma_users', JSON.stringify(users));
+  checkAuth() {
+    const u=localStorage.getItem('pharma_current_user');
+    if(u) this.currentUser=JSON.parse(u),this.showMain();
+    else this.showLogin();
+  }
 
-      this.showToast('Account created successfully! Please login.', 'success');
-      this.switchTab('login');
-      document.getElementById('signup-form').reset();
-    } catch (error) {
-      console.error('Signup error:', error);
-      this.showToast('Signup failed. Please try again.', 'error');
-    }
+  showLogin() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+  }
+
+  showMain() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    this.updateUI();
+    this.switchView(this.currentView);
+  }
+
+  switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    document.querySelectorAll('.auth-form').forEach(f=>f.classList.toggle('active',f.id===`${tab}-form`));
+  }
+
+  switchView(view) {
+    this.currentView=view;
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===`${view}-view`));
+    if(view==='dashboard') this.loadDashboard();
+    if(view==='production') this.loadProduction();
+    if(view==='calendar') this.loadCalendar();
+    if(view==='stock') this.loadStock();
+    if(view==='reports') this.loadReports();
+    if(view==='users') this.loadUsers();
+  }
+
+  login(e) {
+    e.preventDefault();
+    const u=document.getElementById('login-username').value,
+          p=document.getElementById('login-password').value;
+    const users=JSON.parse(localStorage.getItem('pharma_users')), user=users.find(x=>x.username===u&&x.password===p);
+    if(user) {
+      this.currentUser=user; localStorage.setItem('pharma_current_user',JSON.stringify(user));
+      if(user.mustChangePassword)this.showModal('password-change-modal');
+      else this.showMain();
+    } else this.showToast('Invalid credentials','error');
+  }
+
+  signup(e) {
+    e.preventDefault();
+    const u=document.getElementById('signup-username').value,
+          eaddr=document.getElementById('signup-email').value,
+          p=document.getElementById('signup-password').value,
+          r=document.getElementById('signup-role').value;
+    let users=JSON.parse(localStorage.getItem('pharma_users'));
+    if(users.find(x=>x.username===u)){this.showToast('Username taken','error');return;}
+    const nu={id:Date.now(),username:u,email:eaddr,password:p,role:r,mustChangePassword:true};
+    users.push(nu); localStorage.setItem('pharma_users',JSON.stringify(users));
+    this.showToast('Account created!','success');this.switchTab('login');
   }
 
   handlePasswordChange(e) {
     e.preventDefault();
-    const newPassword = document.getElementById('new-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-
-    if (newPassword !== confirmPassword) {
-      this.showToast('Passwords do not match', 'error');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      this.showToast('Password must be at least 8 characters long', 'error');
-      return;
-    }
-
-    try {
-      const users = JSON.parse(localStorage.getItem('pharma_users') || '[]');
-      const userIndex = users.findIndex(u => u.id === this.currentUser.id);
-
-      if (userIndex !== -1) {
-        users[userIndex].password = newPassword;
-        users[userIndex].mustChangePassword = false;
-        localStorage.setItem('pharma_users', JSON.stringify(users));
-
-        this.currentUser = users[userIndex];
-        localStorage.setItem('pharma_current_user', JSON.stringify(this.currentUser));
-
-        this.hideModal('password-change-modal');
-        this.showToast('Password changed successfully!', 'success');
-        setTimeout(() => {
-          this.showMainApp();
-        }, 500);
-      }
-    } catch (error) {
-      console.error('Password change error:', error);
-      this.showToast('Password change failed. Please try again.', 'error');
-    }
+    const np=document.getElementById('new-password').value,
+          cp=document.getElementById('confirm-password').value;
+    if(np!==cp){this.showToast('Mismatch','error');return;}
+    let users=JSON.parse(localStorage.getItem('pharma_users')),idx=users.findIndex(x=>x.id===this.currentUser.id);
+    users[idx].password=np;users[idx].mustChangePassword=false;
+    localStorage.setItem('pharma_users',JSON.stringify(users));
+    this.currentUser=users[idx];localStorage.setItem('pharma_current_user',JSON.stringify(this.currentUser));
+    this.hideModal('password-change-modal');this.showMain();
   }
 
-  handleLogout() {
-    localStorage.removeItem('pharma_current_user');
-    this.currentUser = null;
-    this.showLoginScreen();
-    this.showToast('Logged out successfully', 'info');
+  logout() {
+    localStorage.removeItem('pharma_current_user');this.showLogin();
   }
 
-  // UI Management - FIXED LOGIN SCREEN BUG
-  showLoginScreen() {
-    const loginScreen = document.getElementById('login-screen');
-    const mainApp = document.getElementById('main-app');
-
-    if (loginScreen) {
-      loginScreen.classList.remove('hidden');
-    }
-    if (mainApp) {
-      mainApp.classList.add('hidden');
-    }
+  updateUI() {
+    document.getElementById('user-welcome').textContent=`Welcome, ${this.currentUser.username}`;
+    document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!['admin','superadmin'].includes(this.currentUser.role)));
+    document.querySelectorAll('.superadmin-only').forEach(el=>el.style.display=this.currentUser.role==='superadmin'?'inline':'none');
+    // Company
+    const c=JSON.parse(localStorage.getItem('pharma_company'));
+    document.getElementById('company-name').textContent=c.name;
   }
 
-  showMainApp() {
-    const loginScreen = document.getElementById('login-screen');
-    const mainApp = document.getElementById('main-app');
-
-    if (loginScreen) {
-      loginScreen.classList.add('hidden');
-    }
-    if (mainApp) {
-      mainApp.classList.remove('hidden');
-    }
-
-    this.updateUserInterface();
-    setTimeout(() => {
-      this.loadDashboard();
-      this.renderEquipmentPanel();
-      this.renderDashboardCustomizeBtn();
-    }, 100);
-  }
-
-  updateUserInterface() {
-    const userWelcome = document.getElementById('user-welcome');
-    if (userWelcome && this.currentUser) {
-      userWelcome.textContent = `Welcome, ${this.currentUser.username}`;
-    }
-
-    // Show/hide admin-only elements
-    const adminElements = document.querySelectorAll('.admin-only');
-    adminElements.forEach(el => {
-      if (this.currentUser && (this.currentUser.role === 'superadmin' || this.currentUser.role === 'admin')) {
-        el.classList.remove('hidden');
-      } else {
-        el.classList.add('hidden');
-      }
-    });
-
-    // Show/hide superadmin-only elements
-    const superadminElements = document.querySelectorAll('.superadmin-only');
-    superadminElements.forEach(el => {
-      if (this.currentUser && this.currentUser.role === 'superadmin') {
-        el.style.display = 'inline';
-      } else {
-        el.style.display = 'none';
-      }
-    });
-
-    // Load company info
-    try {
-      const company = JSON.parse(localStorage.getItem('pharma_company') || '{}');
-      const companyNameEl = document.getElementById('company-name');
-      if (companyNameEl) {
-        companyNameEl.textContent = company.name || 'PharmaCorp Manufacturing';
-      }
-
-      if (company.logoUrl) {
-        const logoEl = document.getElementById('company-logo');
-        const placeholderEl = document.querySelector('.logo-placeholder');
-        if (logoEl && placeholderEl) {
-          logoEl.src = company.logoUrl;
-          logoEl.style.display = 'block';
-          placeholderEl.style.display = 'none';
-        }
-      }
-    } catch (error) {
-      console.error('Error loading company info:', error);
-    }
-  }
-
-  switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-
-    const tabBtn = document.querySelector(`[data-tab="${tab}"]`);
-    const tabForm = document.getElementById(`${tab}-form`);
-
-    if (tabBtn) tabBtn.classList.add('active');
-    if (tabForm) tabForm.classList.add('active');
-  }
-
-  switchView(view) {
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-
-    const navBtn = document.querySelector(`[data-view="${view}"]`);
-    const viewEl = document.getElementById(`${view}-view`);
-
-    if (navBtn) navBtn.classList.add('active');
-    if (viewEl) viewEl.classList.add('active');
-
-    this.currentView = view;
-    this.loadViewData(view);
-  }
-
-  loadViewData(view) {
-    switch(view) {
-      case 'dashboard':
-        this.loadDashboard();
-        break;
-      case 'production':
-        this.loadProductionPlans();
-        break;
-      case 'calendar':
-        this.loadCalendar();
-        break;
-      case 'stock':
-        this.loadStockManagement();
-        break;
-      case 'reports':
-        this.loadReports();
-        break;
-      case 'users':
-        this.loadUserManagement();
-        break;
-    }
-  }
-
-  // Dashboard Methods - ENHANCED WITH DATA INFO
-  loadDashboard() {
-    try {
-      // Apply dashboard customization settings
-      this.renderDashboardCustomizeBtn();
-      const settings = JSON.parse(localStorage.getItem('dashboard_settings') ||
-        '{"showProductionTrend":true,"showUtilization":true,"showStockAlerts":true}');
-
-      // Show/hide dashboard cards based on settings
-      const productionCard = document.getElementById('production-trend-card');
-      const utilizationCard = document.getElementById('utilization-card');
-      const stockAlertsCard = document.getElementById('stock-alerts-card');
-
-      if (productionCard) productionCard.style.display = settings.showProductionTrend ? '' : 'none';
-      if (utilizationCard) utilizationCard.style.display = settings.showUtilization ? '' : 'none';
-      if (stockAlertsCard) stockAlertsCard.style.display = settings.showStockAlerts ? '' : 'none';
-
-      const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
-      const equipment = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
-      const materials = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
-
-      // Update stats
-      const totalProduction = productionPlans.reduce((sum, plan) => sum + plan.quantity, 0);
-      const totalProductionEl = document.getElementById('total-production');
-      if (totalProductionEl) {
-        totalProductionEl.textContent = totalProduction.toLocaleString();
-      }
-
-      const availableEquipment = equipment.filter(eq => eq.status === 'Available').length;
-      const busyEquipment = equipment.filter(eq => eq.status === 'In Use').length;
-      const maintenanceEquipment = equipment.filter(eq => eq.status === 'Maintenance').length;
-
-      const availableEl = document.getElementById('available-equipment');
-      const busyEl = document.getElementById('busy-equipment');
-      const maintenanceEl = document.getElementById('maintenance-equipment');
-
-      if (availableEl) availableEl.textContent = availableEquipment;
-      if (busyEl) busyEl.textContent = busyEquipment;
-      if (maintenanceEl) maintenanceEl.textContent = maintenanceEquipment;
-
-      // Stock alerts
-      const lowStockMaterials = materials.filter(m => m.currentStock <= m.minimumStock);
-      const alertsContainer = document.getElementById('stock-alerts');
-      if (alertsContainer) {
-        alertsContainer.innerHTML = '';
-        if (lowStockMaterials.length === 0) {
-          alertsContainer.innerHTML = '<p>No stock alerts</p>';
-        } else {
-          lowStockMaterials.forEach(material => {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert-item';
-            alertDiv.textContent = `Low stock: ${material.name} (${material.currentStock} ${material.unit} remaining)`;
-            alertsContainer.appendChild(alertDiv);
-          });
-        }
-      }
-
-      // Load charts
-      setTimeout(() => {
-        this.loadProductionChart();
-        this.loadAnalyticsChart();
-      }, 200);
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
-      this.showToast('Error loading dashboard data', 'error');
-    }
-  }
-
-  // FIXED: Production Chart - Now shows proper histogram
-  loadProductionChart() {
-    try {
-      const ctx = document.getElementById('production-chart');
-      if (!ctx) return;
-
-      const chartCtx = ctx.getContext('2d');
-      const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
-
-      // Create histogram data by month
-      const monthlyData = {};
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-
-      // Initialize current month data
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentMonthKey = `${monthNames[currentMonth]} ${currentYear}`;
-
-      productionPlans.forEach(plan => {
-        const monthIndex = monthNames.findIndex(m => m === plan.month.substring(0, 3));
-        const key = `${monthNames[monthIndex] || plan.month.substring(0, 3)} ${plan.year}`;
-        monthlyData[key] = (monthlyData[key] || 0) + plan.quantity;
-      });
-
-      // Ensure current month is included even if no data
-      if (!monthlyData[currentMonthKey]) {
-        monthlyData[currentMonthKey] = 0;
-      }
-
-      const labels = Object.keys(monthlyData).length > 0 ? Object.keys(monthlyData) : [currentMonthKey];
-      const data = Object.values(monthlyData).length > 0 ? Object.values(monthlyData) : [0];
-
-      if (this.charts.production) {
-        this.charts.production.destroy();
-      }
-
-      this.charts.production = new Chart(chartCtx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Production Units',
-            data: data,
-            backgroundColor: 'rgba(33, 128, 141, 0.6)',
-            borderColor: 'rgba(33, 128, 141, 1)',
-            borderWidth: 2,
-            borderRadius: 4,
-            borderSkipped: false,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: 'white',
-              bodyColor: 'white',
-              callbacks: {
-                label: function(context) {
-                  return `Units: ${context.parsed.y.toLocaleString()}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value.toLocaleString();
-                }
-              },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.1)'
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              }
-            }
-          },
-          elements: {
-            bar: {
-              borderWidth: 2
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error loading production chart:', error);
-    }
-  }
-
-  // Analytics Chart
-  loadAnalyticsChart() {
-    try {
-      const ctx = document.getElementById('analytics-chart');
-      if (!ctx) return;
-
-      const chartCtx = ctx.getContext('2d');
-      const productionPlans = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
-
-      // Create monthly trend data
-      const monthlyData = {};
-      productionPlans.forEach(plan => {
-        const key = `${plan.month} ${plan.year}`;
-        monthlyData[key] = (monthlyData[key] || 0) + plan.quantity;
-      });
-
-      const labels = Object.keys(monthlyData);
-      const data = Object.values(monthlyData);
-
-      if (this.charts.analytics) {
-        this.charts.analytics.destroy();
-      }
-
-      this.charts.analytics = new Chart(chartCtx, {
-        type: 'line',
-        data: {
-          labels: labels.length > 0 ? labels : ['March 2025'],
-          datasets: [{
-            label: 'Production Trend',
-            data: data.length > 0 ? data : [15000],
-            borderColor: 'rgba(33, 128, 141, 1)',
-            backgroundColor: 'rgba(33, 128, 141, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: 'rgba(33, 128, 141, 1)',
-            pointBorderColor: 'white',
-            pointBorderWidth: 2,
-            pointRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value.toLocaleString();
-                }
-              }
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error loading analytics chart:', error);
-    }
-  }
-
-  // Data Info Modal - NEW FEATURE
-  showDataInfo(cardElement) {
-    if (!this.currentUser || this.currentUser.role !== 'superadmin') {
-      return;
-    }
-
-    const dataSource = cardElement.dataset.source;
-    const dataFormula = cardElement.dataset.formula;
-    
-    // Get data details
-    let sourceData = [];
-    let lastUpdated = 'N/A';
-    let recordCount = 0;
-
-    switch(dataSource) {
-      case 'production_plans':
-        sourceData = JSON.parse(localStorage.getItem('pharma_production_plans') || '[]');
-        recordCount = sourceData.length;
-        lastUpdated = sourceData.length > 0 ? new Date(Math.max(...sourceData.map(p => new Date(p.createdDate)))).toLocaleString() : 'N/A';
-        break;
-      case 'equipment':
-        sourceData = JSON.parse(localStorage.getItem('pharma_equipment') || '[]');
-        recordCount = sourceData.length;
-        lastUpdated = 'Static data';
-        break;
-      case 'materials':
-        sourceData = JSON.parse(localStorage.getItem('pharma_materials') || '[]');
-        recordCount = sourceData.length;
-        lastUpdated = sourceData.length > 0 ? new Date(Math.max(...sourceData.map(m => new Date(m.lastUpdated)))).toLocaleString() : 'N/A';
-        break;
-    }
-
-    // Update modal content
-    document.getElementById('data-info-title').textContent = `Data Source: ${cardElement.querySelector('h3').textContent.replace(' ℹ️', '')}`;
-    document.getElementById('data-source-text').textContent = `localStorage.${dataSource}`;
-    document.getElementById('data-formula-text').textContent = dataFormula;
-    document.getElementById('data-updated-text').textContent = lastUpdated;
-    document.getElementById('data-count-text').textContent = `${recordCount} records`;
-
+  // Data Info
+  showDataInfo(card) {
+    if(this.currentUser.role!=='superadmin')return;
+    const src=card.dataset.source, formula=card.dataset.formula;
+    let data=JSON.parse(localStorage.getItem(`pharma_${src}`)), count=data.length||0, updated='N/A';
+    if(src==='production_plans') updated=data.length?new Date(Math.max(...data.map(x=>new Date(x.createdDate)))).toLocaleString():'N/A';
+    else if(src==='materials') updated=data.length?new Date(Math.max(...data.map(x=>new Date(x.lastUpdated)))).toLocaleString():'N/A';
+    document.getElementById('data-info-title').textContent=card.querySelector('h3').textContent.replace(' ℹ️','');
+    document.getElementById('data-source-text').textContent=`localStorage.pharma_${src}`;
+    document.getElementById('data-formula-text').textContent=formula;
+    document.getElementById('data-updated-text').textContent=updated;
+    document.getElementById('data-count-text').textContent=`${count} records`;
     this.showModal('data-info-modal');
   }
 
-  // Continue with remaining methods... (same as previous implementation)
-  // [Rest of the methods remain unchanged from the previous version]
-  // For brevity, I'm including just the key fixed methods above
-  
-  // Modal Management
-  showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('hidden');
-    }
+  // Dashboard
+  loadDashboard() {
+    // Trend
+    const plans=JSON.parse(localStorage.getItem('pharma_production_plans'));
+    const total=plans.reduce((s,p)=>s+p.quantity,0);
+    document.getElementById('total-production').textContent=total.toLocaleString();
+    this.renderChart('production-chart','bar',plans);
+    this.renderChart('analytics-chart','line',plans);
+    // Util
+    const eq=JSON.parse(localStorage.getItem('pharma_equipment'));
+    document.getElementById('available-equipment').textContent=eq.filter(x=>x.status==='Available').length;
+    document.getElementById('busy-equipment').textContent=eq.filter(x=>x.status==='In Use').length;
+    document.getElementById('maintenance-equipment').textContent=eq.filter(x=>x.status==='Maintenance').length;
+    // Stock Alerts
+    const mats=JSON.parse(localStorage.getItem('pharma_materials'));
+    const lows=mats.filter(x=>x.currentStock<=x.minimumStock);
+    const cont=document.getElementById('stock-alerts');cont.innerHTML='';
+    if(!lows.length) cont.innerHTML='<p>No stock alerts</p>';
+    else lows.forEach(m=>cont.innerHTML+=`<div>${m.name}: ${m.currentStock}${m.unit}</div>`);
   }
 
-  hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('hidden');
-    }
+  renderChart(id,type,dataArr) {
+    const ctx=document.getElementById(id).getContext('2d');
+    const labels=[], data=[];
+    const map={};
+    dataArr.forEach(d=>{
+      const key=type==='bar'?`${d.month} ${d.year}`:`${d.month} ${d.year}`;
+      map[key]=(map[key]||0)+d.quantity;
+    });
+    Object.keys(map).forEach(k=>{labels.push(k);data.push(map[k]);});
+    if(!labels.length){labels.push(`${new Date().toLocaleString('default',{month:'short'})} ${new Date().getFullYear()}`);data.push(0);}
+    if(this.charts[id]) this.charts[id].destroy();
+    this.charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{label:'',data,backgroundColor:'rgba(33,128,141,0.6)',borderColor:'rgba(33,128,141,1)',fill:type==='line'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   }
 
-  // Toast Notifications
-  showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast--${type}`;
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    // Trigger animation
-    setTimeout(() => {
-      toast.classList.add('show');
-    }, 100);
-
-    // Remove toast after 3 seconds
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        if (container.contains(toast)) {
-          container.removeChild(toast);
-        }
-      }, 300);
-    }, 3000);
+  // Production Plans
+  loadProduction() {
+    const plans=JSON.parse(localStorage.getItem('pharma_production_plans'));
+    const cont=document.getElementById('production-plans-list');cont.innerHTML='';
+    plans.forEach(p=>cont.innerHTML+=`<div class="production-plan-item"><b>${p.drugName}</b>: ${p.quantity} units (${p.month} ${p.year})</div>`);
   }
+  addProduction(e) {
+    e.preventDefault();
+    const m=document.getElementById('add-month').value,
+          y=document.getElementById('add-year').value,
+          d=document.getElementById('add-drug-name').value,
+          q=+document.getElementById('add-quantity').value;
+    const arr=JSON.parse(localStorage.getItem('pharma_production_plans'));
+    arr.push({id:Date.now(),drugName:d,quantity:q,month:m,year:y,status:'Planned',createdDate:new Date().toISOString()});
+    localStorage.setItem('pharma_production_plans',JSON.stringify(arr));
+    this.hideModal('add-production-modal');this.loadProduction();
+  }
+
+  // Calendar
+  loadCalendar() {
+    const eq=JSON.parse(localStorage.getItem('pharma_equipment')),
+          cal=JSON.parse(localStorage.getItem('pharma_calendar'));
+    const header=document.getElementById('calendar-month-label'),
+          monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    header.textContent=`${monthNames[this.currentMonth]} ${this.currentYear}`;
+    const days=new Date(this.currentYear,this.currentMonth+1,0).getDate();
+    const grid=document.getElementById('equipment-calendar');
+    grid.innerHTML='';grid.style.gridTemplateColumns=`150px repeat(${days},1fr)`;
+    // headings
+    grid.innerHTML+='<div class="calendar-equipment-header">Equipment</div>';
+    for(let d=1;d<=days;d++) grid.innerHTML+=`<div class="calendar-header">${d}</div>`;
+    // rows
+    eq.forEach(e=> {
+      grid.innerHTML+=`<div class="calendar-equipment-header" ondblclick="pharmaApp.editEquipmentName(${e.id})">${e.name}</div>`;
+      for(let d=1;d<=days;d++){
+        const key=`${e.id}-${this.currentYear}-${this.currentMonth}-${d}`,
+              rec=cal.find(x=>x.key===key)||{};
+        const cls=rec.type||'', info=`${rec.batchInfo||''}`+(rec.notes?`<div class="batch-notes">${rec.notes}</div>`:'');
+        grid.innerHTML+=`<div class="calendar-cell ${cls}" data-eid="${e.id}" data-day="${d}">${info}</div>`;
+      }
+    });
+  }
+  changeMonth(dir){
+    this.currentMonth+=dir;
+    if(this.currentMonth>11){this.currentMonth=0;this.currentYear++}
+    if(this.currentMonth<0){this.currentMonth=11;this.currentYear--}
+    if(this.currentView==='calendar')this.loadCalendar();
+  }
+  editCalendarCell(eid,day){ /* ... show edit modal ... */ }
+  saveCalendar(e){e.preventDefault();/* ... */}
+
+  // Stock
+  loadStock() {
+    const mats=JSON.parse(localStorage.getItem('pharma_materials')),cont=document.getElementById('materials-list');cont.innerHTML='';
+    mats.forEach(m=>cont.innerHTML+=`<div class="material-item">${m.name}: ${m.currentStock}${m.unit}</div>`);
+  }
+  addMaterial(e){e.preventDefault();const n=document.getElementById('material-name').value;const cs=+document.getElementById('material-stock').value;const ms=+document.getElementById('material-min-stock').value;const u=document.getElementById('material-unit').value;const arr=JSON.parse(localStorage.getItem('pharma_materials'));arr.push({id:Date.now(),name:n,currentStock:cs,minimumStock:ms,unit:u,lastUpdated:new Date().toISOString()});localStorage.setItem('pharma_materials',JSON.stringify(arr));this.hideModal('add-material-modal');this.loadStock();}
+
+  // Reports
+  loadReports(){
+    const plans=JSON.parse(localStorage.getItem('pharma_production_plans')).length;
+    const eq=JSON.parse(localStorage.getItem('pharma_equipment')).length;
+    const mats=JSON.parse(localStorage.getItem('pharma_materials')).filter(x=>x.currentStock<=x.minimumStock).length;
+    const cont=document.getElementById('reports-list');
+    cont.innerHTML=`<div class="card"><div>Total Plans: ${plans}</div><div>Equipment: ${eq}</div><div>Low Stock: ${mats}</div></div>`;
+  }
+
+  // Users
+  loadUsers(){
+    const users=JSON.parse(localStorage.getItem('pharma_users')),cont=document.getElementById('users-list');
+    cont.innerHTML='';users.forEach(u=>cont.innerHTML+=`<div class="user-item"><b>${u.username}</b> (${u.role})</div>`);
+  }
+  addUser(e){e.preventDefault();const u=document.getElementById('user-username').value;const em=document.getElementById('user-email').value;const pw=document.getElementById('user-password').value;const r=document.getElementById('user-role').value;const arr=JSON.parse(localStorage.getItem('pharma_users'));arr.push({id:Date.now(),username:u,email:em,password:pw,role:r,mustChangePassword:true});localStorage.setItem('pharma_users',JSON.stringify(arr));this.hideModal('add-user-modal');this.loadUsers();}
+
+  // Company editing
+  editCompanyName(){
+    document.getElementById('company-name').classList.add('hidden');
+    document.getElementById('company-name-input').classList.remove('hidden');
+    document.getElementById('company-name-input').value=document.getElementById('company-name').textContent;
+  }
+  uploadLogo(e){
+    const f=e.target.files[0],r=new FileReader();
+    r.onload=()=>{const url=r.result;const c=JSON.parse(localStorage.getItem('pharma_company'));c.logoUrl=url;localStorage.setItem('pharma_company',JSON.stringify(c));this.updateUI();}
+    r.readAsDataURL(f);
+  }
+
+  // Dashboard settings
+  saveDashboardSettings(e){e.preventDefault();/* ... */}
+
+  // Equipment management
+  saveEquipment(e){e.preventDefault();/* ... */}
+
+  showModal(id){document.getElementById(id).classList.remove('hidden')}
+  hideModal(id){document.getElementById(id).classList.add('hidden')}
+
+  showToast(msg,type='info'){const t=document.createElement('div');t.className=`toast toast--${type}`;t.textContent=msg;document.getElementById('toast-container').append(t);setTimeout(()=>t.remove(),3000);}
 }
 
-// Global initialization
-window.pharmaApp = new PharmaPlanningApp();
-
-// Add debug function to reset data if needed
-window.resetPharmaData = function() {
-  if (window.pharmaApp) {
-    window.pharmaApp.resetToDefaults();
-    location.reload();
-  }
-};
+// Initialize
+window.pharmaApp=new PharmaPlanningApp();
