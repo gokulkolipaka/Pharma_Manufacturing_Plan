@@ -1,210 +1,471 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pharma Resource Planning System</title>
-  <link rel="stylesheet" href="style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma Planning System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- Login Screen -->
-  <div id="login-screen" class="login-screen">
-    <div class="login-container">
-      <div class="login-header">
-        <h1>Pharma Resource Planning</h1>
-        <p>Secure Login</p>
-      </div>
-      <div class="login-tabs">
-        <button class="tab-btn active" data-tab="login">Login</button>
-        <button class="tab-btn" data-tab="signup">Sign Up</button>
-      </div>
-      <form id="login-form" class="auth-form active">
-        <div class="form-group">
-          <label>Username</label>
-          <input id="login-username" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input id="login-password" type="password" class="form-control" required>
-        </div>
-        <button class="btn btn--primary" type="submit">Login</button>
-      </form>
-      <form id="signup-form" class="auth-form">
-        <div class="form-group">
-          <label>Username</label>
-          <input id="signup-username" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input id="signup-email" class="form-control" type="email" required>
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input id="signup-password" type="password" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label>User Role</label>
-          <select id="signup-role" class="form-control" required>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="superadmin">Super Admin</option>
-          </select>
-        </div>
-        <button class="btn btn--primary" type="submit">Create Account</button>
-      </form>
+    <!-- Dark Mode Toggle -->
+    <div class="dark-mode-toggle">
+        <label>
+            <input type="checkbox" id="darkModeToggle"> 🌙 Dark Mode
+        </label>
     </div>
-  </div>
 
-  <!-- Dark Mode Toggle -->
-  <div id="dark-mode-toggle" class="dark-mode-toggle">
-    <label><input type="checkbox" id="dark-toggle"> Dark Mode</label>
-  </div>
-
-  <!-- Main Application -->
-  <div id="main-app" class="main-app hidden">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-content">
-        <div class="company-info">
-          <div class="logo-container" id="logo-placeholder" title="Upload company logo">
-            <img id="company-logo" src="" style="display:none;" alt="Logo"/>
-            <span class="logo-placeholder">Add Logo</span>
-            <input id="logo-upload" type="file" accept="image/*" class="sr-only"/>
-          </div>
-          <div class="company-details">
-            <h1 id="company-name">PharmaCorp Manufacturing</h1>
-            <input id="company-name-input" class="company-name-input hidden"/>
-          </div>
-        </div>
-        <div class="user-info">
-          <span id="user-welcome"></span>
-          <button class="btn btn--secondary" id="logout-btn">Logout</button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Navigation -->
-    <nav class="app-nav">
-      <div class="nav-content">
-        <button class="nav-btn active" data-view="dashboard">Dashboard</button>
-        <button class="nav-btn" data-view="production">Production Plans</button>
-        <button class="nav-btn" data-view="calendar">Equipment Calendar</button>
-        <button class="nav-btn" data-view="stock">Stock Management</button>
-        <button class="nav-btn" data-view="reports">Reports</button>
-        <button class="nav-btn admin-only hidden" data-view="users">User Management</button>
-      </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="app-main">
-      <!-- Dashboard -->
-      <section class="view active" id="dashboard-view">
-        <div class="view-header">
-          <h2>Production Overview</h2>
-          <button class="btn btn--secondary superadmin-only" id="customize-dashboard-btn">Customize Dashboard</button>
-        </div>
-        <div class="dashboard-grid">
-          <div class="dashboard-card clickable-card" id="production-trend-card" data-source="production_plans" data-formula="Sum quantities of all production plans">
-            <h3>Units This Month <span class="info-icon superadmin-only">ℹ️</span></h3>
-            <div class="stat-value" id="total-production">0</div>
-            <div class="chart-container">
-              <canvas id="production-chart"></canvas>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🏥 Pharma Planning System</h1>
+                <p>Secure pharmaceutical production management</p>
             </div>
-          </div>
-          <div class="dashboard-card clickable-card" id="utilization-card" data-source="equipment" data-formula="Count equipment by status">
-            <h3>Equipment Status <span class="info-icon superadmin-only">ℹ️</span></h3>
-            <div class="equipment-status">
-              <div>Available: <span id="available-equipment">0</span></div>
-              <div>In Use: <span id="busy-equipment">0</span></div>
-              <div>Maintenance: <span id="maintenance-equipment">0</span></div>
+            
+            <div class="login-tabs">
+                <button class="tab-btn active" data-tab="login">Login</button>
+                <button class="tab-btn" data-tab="signup">Sign Up</button>
             </div>
-          </div>
-          <div class="dashboard-card clickable-card" id="stock-alerts-card" data-source="materials" data-formula="Materials where currentStock ≤ minimumStock">
-            <h3>Stock Alerts <span class="info-icon superadmin-only">ℹ️</span></h3>
-            <div class="alerts-container" id="stock-alerts"></div>
-          </div>
-          <div class="dashboard-card full-width clickable-card" data-source="production_plans" data-formula="Monthly aggregation of quantities">
-            <h3>Production Analytics <span class="info-icon superadmin-only">ℹ️</span></h3>
-            <div class="chart-container">
-              <canvas id="analytics-chart"></canvas>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="signupUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="signupRole">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="superadmin">Super Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="company-info">
+                    <div class="logo-container" id="logoContainer">
+                        <img id="companyLogo" class="hidden" alt="Company Logo">
+                        <div id="logoPlaceholder" class="logo-placeholder">📷 Add Logo</div>
+                        <input type="file" id="logoUpload" accept="image/*" class="hidden">
+                    </div>
+                    <div class="company-details">
+                        <h1 id="companyName" class="editable">PharmaCorp Manufacturing</h1>
+                        <input type="text" id="companyNameInput" class="hidden">
+                    </div>
+                </div>
+                <div class="user-info">
+                    <span id="welcomeMessage"></span>
+                    <button id="logoutBtn" class="btn-secondary">Logout</button>
+                </div>
             </div>
-          </div>
-        </div>
-      </section>
+        </header>
 
-      <!-- Production Plans -->
-      <section class="view" id="production-view">
-        <div class="view-header">
-          <h2>Production Planning</h2>
-          <button class="btn btn--primary" id="add-production-btn">Add Production Plan</button>
-        </div>
-        <div class="production-grid">
-          <div class="card">
-            <h3>Current Production Plans</h3>
-            <div id="production-plans-list"></div>
-          </div>
-        </div>
-      </section>
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+            <button class="nav-btn" data-view="production">📋 Production Plans</button>
+            <button class="nav-btn" data-view="calendar">🗓️ Equipment Calendar</button>
+            <button class="nav-btn" data-view="stock">📦 Stock Management</button>
+            <button class="nav-btn" data-view="reports">📄 Reports</button>
+            <button class="nav-btn admin-only" data-view="users">👥 User Management</button>
+        </nav>
 
-      <!-- Equipment Calendar -->
-      <section class="view" id="calendar-view">
-        <div class="view-header">
-          <h2>Equipment Calendar</h2>
-          <div class="calendar-controls">
-            <button class="btn btn--secondary" id="prev-month">← Prev</button>
-            <span id="calendar-month-label"></span>
-            <button class="btn btn--secondary" id="next-month">Next →</button>
-            <button class="btn btn--primary admin-only" id="add-equipment-btn">Add Equipment</button>
-          </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view active">
+                <div class="view-header">
+                    <h2>Production Overview</h2>
+                    <button id="customizeDashboard" class="btn-secondary superadmin-only">⚙️ Customize</button>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="dashboard-card clickable" data-source="production_plans" data-formula="Sum of all production quantities">
+                        <h3>📈 Production This Month <span class="info-icon superadmin-only">ℹ️</span></h3>
+                        <div class="stat-value" id="totalProduction">0</div>
+                        <div class="chart-container">
+                            <canvas id="productionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card clickable" data-source="equipment" data-formula="Count by status classification">
+                        <h3>🔧 Equipment Status <span class="info-icon superadmin-only">ℹ️</span></h3>
+                        <div class="equipment-status">
+                            <div class="status-item">
+                                <span>Available:</span>
+                                <span id="availableEquipment" class="status-available">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span>In Use:</span>
+                                <span id="busyEquipment" class="status-busy">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span>Maintenance:</span>
+                                <span id="maintenanceEquipment" class="status-maintenance">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card clickable" data-source="materials" data-formula="Materials where currentStock ≤ minimumStock">
+                        <h3>⚠️ Stock Alerts <span class="info-icon superadmin-only">ℹ️</span></h3>
+                        <div id="stockAlerts" class="alerts-container"></div>
+                    </div>
+
+                    <div class="dashboard-card full-width clickable" data-source="production_plans" data-formula="Monthly aggregation and trend analysis">
+                        <h3>📊 Production Analytics <span class="info-icon superadmin-only">ℹ️</span></h3>
+                        <div class="chart-container">
+                            <canvas id="analyticsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Plans View -->
+            <div id="productionView" class="view">
+                <div class="view-header">
+                    <h2>Production Planning</h2>
+                    <button id="addProductionBtn" class="btn-primary">➕ Add Production Plan</button>
+                </div>
+                <div class="production-grid">
+                    <div class="card">
+                        <h3>Current Production Plans</h3>
+                        <div id="productionPlansList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Calendar View -->
+            <div id="calendarView" class="view">
+                <div class="view-header">
+                    <h2>Equipment Calendar</h2>
+                    <div class="calendar-controls">
+                        <button id="prevMonth" class="btn-secondary">← Previous</button>
+                        <span id="currentMonthYear"></span>
+                        <button id="nextMonth" class="btn-secondary">Next →</button>
+                        <button id="addEquipmentBtn" class="btn-primary admin-only">➕ Add Equipment</button>
+                    </div>
+                </div>
+                <div class="calendar-container">
+                    <div id="equipmentCalendar" class="equipment-calendar"></div>
+                </div>
+            </div>
+
+            <!-- Stock Management View -->
+            <div id="stockView" class="view">
+                <div class="view-header">
+                    <h2>Stock Management</h2>
+                    <div class="stock-controls">
+                        <button id="addMaterialBtn" class="btn-primary">➕ Add Material</button>
+                        <button id="uploadExcelBtn" class="btn-secondary">📄 Upload Excel</button>
+                        <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" class="hidden">
+                    </div>
+                </div>
+                <div id="materialsList" class="materials-grid"></div>
+            </div>
+
+            <!-- Reports View -->
+            <div id="reportsView" class="view">
+                <div class="view-header">
+                    <h2>Reports & Analytics</h2>
+                    <div class="report-controls">
+                        <button id="exportCSV" class="btn-secondary">📊 Export CSV</button>
+                        <button id="exportPDF" class="btn-secondary">📄 Export PDF</button>
+                        <button id="printReport" class="btn-secondary">🖨️ Print</button>
+                    </div>
+                </div>
+                <div id="reportsList" class="reports-grid"></div>
+            </div>
+
+            <!-- User Management View -->
+            <div id="usersView" class="view">
+                <div class="view-header">
+                    <h2>User Management</h2>
+                    <button id="addUserBtn" class="btn-primary superadmin-only">➕ Add User</button>
+                </div>
+                <div id="usersList" class="users-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Password Change Modal -->
+    <div id="passwordModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>🔒 Change Your Password</h3>
+            <p>For security, please change your default password</p>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="confirmPassword" minlength="8" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Change Password</button>
+                </div>
+            </form>
         </div>
-        <div class="calendar-container">
-          <div id="equipment-calendar" class="equipment-calendar"></div>
+    </div>
+
+    <!-- Production Plan Modal -->
+    <div id="productionModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>➕ Add Production Plan</h3>
+            <form id="productionForm">
+                <div class="form-group">
+                    <label>Drug Name</label>
+                    <input type="text" id="drugName" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantity (units)</label>
+                    <input type="number" id="drugQuantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Target Month</label>
+                    <select id="targetMonth" required>
+                        <option value="">Select Month</option>
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <input type="number" id="targetYear" min="2024" max="2030" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('productionModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Plan</button>
+                </div>
+            </form>
         </div>
-      </section>
+    </div>
 
-      <!-- Stock Management -->
-      <section class="view" id="stock-view">
-        <div class="view-header">
-          <h2>Stock Management</h2>
-          <button class="btn btn--primary" id="add-material-btn">Add Material</button>
-          <button class="btn btn--secondary" id="upload-stock-btn">Upload Excel</button>
+    <!-- Equipment Modal -->
+    <div id="equipmentModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="equipmentModalTitle">➕ Add Equipment</h3>
+            <form id="equipmentForm">
+                <input type="hidden" id="equipmentId">
+                <div class="form-group">
+                    <label>Equipment Name</label>
+                    <input type="text" id="equipmentName" required>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="equipmentType" required>
+                        <option value="">Select Type</option>
+                        <option value="Tablet Press">Tablet Press</option>
+                        <option value="Capsule Filler">Capsule Filler</option>
+                        <option value="Blender">Blender</option>
+                        <option value="Granulator">Granulator</option>
+                        <option value="Coating Machine">Coating Machine</option>
+                        <option value="Packaging Line">Packaging Line</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="equipmentLocation" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="equipmentStatus" required>
+                        <option value="Available">Available</option>
+                        <option value="In Use">In Use</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Out of Order">Out of Order</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('equipmentModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Equipment</button>
+                </div>
+            </form>
         </div>
-        <input type="file" id="excel-upload" accept=".csv,.xls,.xlsx" class="sr-only"/>
-        <div id="materials-list" class="stock-grid"></div>
-      </section>
+    </div>
 
-      <!-- Reports -->
-      <section class="view" id="reports-view">
-        <div class="view-header">
-          <h2>Reports</h2>
-          <button class="btn btn--outline" id="export-csv-btn">Export CSV</button>
-          <button class="btn btn--outline" id="export-pdf-btn">Export PDF</button>
-          <button class="btn btn--outline" id="print-report-btn">Print</button>
+    <!-- Material Modal -->
+    <div id="materialModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>➕ Add Material</h3>
+            <form id="materialForm">
+                <div class="form-group">
+                    <label>Material Name</label>
+                    <input type="text" id="materialName" required>
+                </div>
+                <div class="form-group">
+                    <label>Current Stock</label>
+                    <input type="number" id="currentStock" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Minimum Stock Level</label>
+                    <input type="number" id="minimumStock" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Unit</label>
+                    <select id="stockUnit" required>
+                        <option value="">Select Unit</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="g">Grams (g)</option>
+                        <option value="L">Liters (L)</option>
+                        <option value="mL">Milliliters (mL)</option>
+                        <option value="units">Units</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Lead Time (days)</label>
+                    <input type="number" id="leadTime" min="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('materialModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Material</button>
+                </div>
+            </form>
         </div>
-        <div id="reports-list" class="reports-grid"></div>
-      </section>
+    </div>
 
-      <!-- User Management -->
-      <section class="view" id="users-view">
-        <div class="view-header">
-          <h2>User Management</h2>
-          <button class="btn btn--primary admin-only" id="add-user-btn">Add User</button>
+    <!-- User Modal -->
+    <div id="userModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>➕ Add User</h3>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="newUserEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Temporary Password</label>
+                    <input type="password" id="newUserPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="newUserRole" required>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="superadmin">Super Admin</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('userModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Add User</button>
+                </div>
+            </form>
         </div>
-        <div id="users-list" class="users-grid"></div>
-      </section>
-    </main>
-  </div>
+    </div>
 
-  <!-- Toast Container -->
-  <div id="toast-container" class="toast-container"></div>
+    <!-- Calendar Edit Modal -->
+    <div id="calendarModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>🗓️ Schedule Equipment</h3>
+            <form id="calendarForm">
+                <input type="hidden" id="scheduleEquipmentId">
+                <input type="hidden" id="scheduleDate">
+                <div class="form-group">
+                    <label>Activity Type</label>
+                    <select id="activityType" required>
+                        <option value="">Select Activity</option>
+                        <option value="production">Production</option>
+                        <option value="cleaning">Cleaning</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="idle">Idle</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Batch Number / Description</label>
+                    <input type="text" id="batchNumber" placeholder="e.g., BATCH-001 or Cleaning Schedule">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="activityNotes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('calendarModal')">Cancel</button>
+                    <button type="button" id="clearSchedule" class="btn-warning">Clear Schedule</button>
+                    <button type="submit" class="btn-primary">Save Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-  <!-- Modals -->
-  <!-- Password Change, Add/Edit Production, Add/Edit Material, Add/Edit Equipment, Add/Edit User -->
-  <!-- Data Info Modal, Dashboard Customize Modal -->
-  <!-- ... (omitted for brevity, include all modals from prior code) -->
+    <!-- Data Info Modal -->
+    <div id="dataInfoModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>📊 Data Source Information</h3>
+            <div class="data-info">
+                <div class="info-section">
+                    <h4>Data Source:</h4>
+                    <p id="dataSource"></p>
+                </div>
+                <div class="info-section">
+                    <h4>Formula/Calculation:</h4>
+                    <p id="dataFormula"></p>
+                </div>
+                <div class="info-section">
+                    <h4>Last Updated:</h4>
+                    <p id="lastUpdated"></p>
+                </div>
+                <div class="info-section">
+                    <h4>Record Count:</h4>
+                    <p id="recordCount"></p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal('dataInfoModal')">Close</button>
+            </div>
+        </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="app.js"></script>
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>
