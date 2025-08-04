@@ -45,28 +45,6 @@ body {
 .admin-only, .superadmin-only { display: none; }
 .admin-only.show, .superadmin-only.show { display: block; }
 
-/* Dark Mode Toggle */
-.dark-mode-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    background: var(--surface);
-    padding: 8px 12px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-}
-
-.dark-mode-toggle label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text-primary);
-}
-
 /* Login Screen */
 .login-screen {
     min-height: 100vh;
@@ -138,6 +116,19 @@ body {
     display: block;
 }
 
+.auth-help {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.auth-help small {
+    color: var(--text-secondary);
+    background: var(--background);
+    padding: 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
 /* Form Styles */
 .form-group {
     margin-bottom: 20px;
@@ -169,7 +160,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Button Styles */
-.btn-primary, .btn-secondary, .btn-warning {
+.btn-primary, .btn-secondary, .btn-warning, .btn-logout {
     padding: 12px 24px;
     border: none;
     border-radius: var(--border-radius);
@@ -180,11 +171,14 @@ input:focus, select:focus, textarea:focus {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .btn-primary {
     background: var(--primary-color);
     color: white;
+    width: 100%;
 }
 
 .btn-primary:hover {
@@ -195,6 +189,7 @@ input:focus, select:focus, textarea:focus {
     background: var(--surface);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    width: auto;
 }
 
 .btn-secondary:hover {
@@ -204,10 +199,22 @@ input:focus, select:focus, textarea:focus {
 .btn-warning {
     background: var(--warning-color);
     color: white;
+    width: auto;
 }
 
 .btn-warning:hover {
     background: #d97706;
+}
+
+.btn-logout {
+    background: var(--error-color);
+    color: white;
+    padding: 8px 16px;
+    font-size: 12px;
+}
+
+.btn-logout:hover {
+    background: #dc2626;
 }
 
 /* Main App Layout */
@@ -217,7 +224,7 @@ input:focus, select:focus, textarea:focus {
     flex-direction: column;
 }
 
-/* Header */
+/* Header - FIXED LAYOUT */
 .app-header {
     background: var(--surface);
     border-bottom: 1px solid var(--border-color);
@@ -240,36 +247,38 @@ input:focus, select:focus, textarea:focus {
     gap: 16px;
 }
 
+/* FIXED: Logo container - rectangular 170x66 */
 .logo-container {
     position: relative;
-    width: 50px;
-    height: 50px;
+    width: 170px;
+    height: 66px;
     cursor: pointer;
-}
-
-.logo-placeholder {
-    width: 100%;
-    height: 100%;
     border: 2px dashed var(--border-color);
-    border-radius: 50%;
+    border-radius: var(--border-radius);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
+    overflow: hidden;
 }
 
-.logo-placeholder:hover {
+.logo-placeholder {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.logo-container:hover {
     border-color: var(--primary-color);
+}
+
+.logo-container:hover .logo-placeholder {
     color: var(--primary-color);
 }
 
-#companyLogo {
+.company-logo {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
+    object-fit: contain;
 }
 
 .company-details h1 {
@@ -283,10 +292,6 @@ input:focus, select:focus, textarea:focus {
     color: var(--primary-color);
 }
 
-.editable {
-    cursor: pointer;
-}
-
 #companyNameInput {
     font-size: 20px;
     font-weight: 600;
@@ -294,11 +299,43 @@ input:focus, select:focus, textarea:focus {
     padding: 4px 8px;
 }
 
+/* FIXED: User info with dark mode toggle */
 .user-info {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.user-greeting {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+#welcomeMessage {
     font-size: 14px;
+    color: var(--text-primary);
+}
+
+/* FIXED: Dark mode toggle - sleek and small */
+.dark-mode-toggle {
+    font-size: 12px;
+}
+
+.dark-mode-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.dark-mode-toggle input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    transform: scale(0.8);
 }
 
 /* Navigation */
@@ -307,12 +344,10 @@ input:focus, select:focus, textarea:focus {
     border-bottom: 1px solid var(--border-color);
     padding: 0 20px;
     overflow-x: auto;
-}
-
-.app-nav {
     display: flex;
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .nav-btn {
@@ -512,7 +547,7 @@ input:focus, select:focus, textarea:focus {
     font-size: 12px;
 }
 
-/* Equipment Calendar */
+/* Equipment Calendar - FIXED AND FUNCTIONAL */
 .calendar-controls {
     display: flex;
     align-items: center;
@@ -521,39 +556,50 @@ input:focus, select:focus, textarea:focus {
     flex-wrap: wrap;
 }
 
+#currentMonthYear {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--primary-color);
+    min-width: 150px;
+    text-align: center;
+}
+
 .calendar-container {
     background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
+    overflow: auto;
     box-shadow: var(--shadow);
+    max-height: 600px;
 }
 
 .equipment-calendar {
     display: grid;
-    grid-template-columns: 150px repeat(31, 60px);
-    overflow-x: auto;
-    min-height: 400px;
+    min-width: 1000px;
 }
 
 .calendar-header {
     background: var(--background);
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
-    padding: 12px 8px;
+    padding: 8px;
     text-align: center;
     font-weight: 600;
     font-size: 12px;
     color: var(--text-primary);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .equipment-header {
     background: var(--background);
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
-    padding: 12px;
+    padding: 8px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -561,6 +607,8 @@ input:focus, select:focus, textarea:focus {
     position: sticky;
     left: 0;
     z-index: 10;
+    min-height: 60px;
+    width: 120px;
 }
 
 .equipment-header:hover {
@@ -577,6 +625,10 @@ input:focus, select:focus, textarea:focus {
     font-size: 10px;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 60px;
 }
 
 .calendar-cell:hover {
@@ -601,17 +653,25 @@ input:focus, select:focus, textarea:focus {
 .calendar-cell.conflict {
     background: rgba(239, 68, 68, 0.2);
     border: 2px solid var(--error-color);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }
 
 .batch-info {
     font-weight: 600;
     margin-bottom: 2px;
     word-break: break-word;
+    font-size: 9px;
 }
 
 .batch-notes {
     color: var(--text-secondary);
-    font-size: 9px;
+    font-size: 8px;
     word-break: break-word;
 }
 
@@ -639,7 +699,7 @@ input:focus, select:focus, textarea:focus {
 .stock-indicator.critical { background: var(--error-color); }
 
 /* Reports */
-.report-controls {
+.report-controls, .stock-controls {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
@@ -672,11 +732,38 @@ input:focus, select:focus, textarea:focus {
     border: 1px solid var(--border-color);
 }
 
-.modal-content h3 {
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
+}
+
+.modal-header h3 {
     color: var(--text-primary);
     font-size: 20px;
     font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--background);
+    color: var(--text-primary);
 }
 
 .modal-actions {
@@ -773,6 +860,11 @@ input:focus, select:focus, textarea:focus {
         justify-content: center;
     }
     
+    .logo-container {
+        width: 140px;
+        height: 54px;
+    }
+    
     .view-header {
         flex-direction: column;
         gap: 16px;
@@ -788,7 +880,16 @@ input:focus, select:focus, textarea:focus {
     }
     
     .equipment-calendar {
-        grid-template-columns: 100px repeat(31, 50px);
+        min-width: 800px;
+    }
+    
+    .equipment-header {
+        width: 100px;
+    }
+    
+    .calendar-cell {
+        width: 50px;
+        min-height: 50px;
     }
     
     .modal-content {
@@ -800,13 +901,14 @@ input:focus, select:focus, textarea:focus {
         flex-direction: column;
     }
     
-    .report-controls {
-        justify-content: center;
-    }
-    
-    .stock-controls {
+    .report-controls, .stock-controls {
         justify-content: center;
         flex-direction: column;
+    }
+    
+    .toast {
+        min-width: 250px;
+        margin: 0 10px;
     }
 }
 
@@ -820,28 +922,28 @@ input:focus, select:focus, textarea:focus {
     }
     
     .equipment-calendar {
-        grid-template-columns: 80px repeat(31, 40px);
-        font-size: 10px;
+        min-width: 600px;
+        font-size: 8px;
     }
     
     .calendar-cell {
         min-height: 40px;
-        font-size: 8px;
+        width: 40px;
     }
     
-    .toast {
-        min-width: 250px;
-        margin: 0 10px;
+    .equipment-header {
+        width: 80px;
+        font-size: 10px;
     }
 }
 
 /* Print Styles */
 @media print {
-    .dark-mode-toggle,
     .app-header .user-info,
     .view-header button,
     .modal,
-    .toast-container {
+    .toast-container,
+    .dark-mode-toggle {
         display: none !important;
     }
     
