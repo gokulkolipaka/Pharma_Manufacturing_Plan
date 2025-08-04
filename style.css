@@ -125,6 +125,7 @@ html {
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 *,
@@ -288,21 +289,34 @@ p {
 
 /* Utility classes */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .admin-only.hidden {
   display: none !important;
 }
 
-/* Login Screen Styles */
+.superadmin-only {
+  display: none;
+}
+
+/* Login Screen Styles - FIXED */
 .login-screen {
-  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-bg-1), var(--color-bg-3));
   padding: var(--space-20);
+  z-index: 1000;
+}
+
+.login-screen.hidden {
+  display: none !important;
 }
 
 .login-container {
@@ -477,11 +491,17 @@ p {
   margin-top: var(--space-24);
 }
 
-/* Main App Layout */
+/* Main App Layout - FIXED */
 .main-app {
-  display: flex;
+  display: none;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.main-app:not(.hidden) {
+  display: flex;
 }
 
 .app-header {
@@ -633,7 +653,7 @@ p {
   margin: 0;
 }
 
-/* Dashboard Styles */
+/* Dashboard Styles - ENHANCED */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -646,7 +666,8 @@ p {
   border-radius: var(--radius-lg);
   padding: var(--space-20);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--duration-normal) var(--ease-standard);
+  transition: all var(--duration-normal) var(--ease-standard);
+  position: relative;
 }
 
 .dashboard-card:hover {
@@ -661,6 +682,23 @@ p {
   margin: 0 0 var(--space-16) 0;
   color: var(--color-text);
   font-size: var(--font-size-lg);
+  position: relative;
+}
+
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.info-icon {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  margin-left: var(--space-8);
+  cursor: help;
 }
 
 .stat-value {
@@ -701,6 +739,25 @@ p {
   padding: var(--space-12);
   margin-bottom: var(--space-8);
   font-size: var(--font-size-sm);
+}
+
+/* Data Info Modal Styles */
+.info-section {
+  margin-bottom: var(--space-16);
+}
+
+.info-section h4 {
+  margin-bottom: var(--space-8);
+  color: var(--color-primary);
+  font-size: var(--font-size-md);
+}
+
+.info-section p {
+  margin: 0;
+  background: var(--color-bg-1);
+  padding: var(--space-8);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
 }
 
 /* Production Planning */
@@ -982,6 +1039,7 @@ p {
 /* Chart Container */
 .chart-container {
   position: relative;
+  margin-top: var(--space-12);
 }
 
 .chart-container canvas {
