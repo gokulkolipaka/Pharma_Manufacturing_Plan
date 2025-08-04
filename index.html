@@ -100,26 +100,28 @@
           <div id="dashboard-customize-btn"></div>
         </div>
         <div class="dashboard-grid">
-          <div class="dashboard-card" id="production-trend-card">
-            <h3>Units This Month</h3>
+          <div class="dashboard-card clickable-card" id="production-trend-card" data-source="production_plans" data-formula="Sum of quantity from all production plans">
+            <h3>Units This Month <span class="info-icon superadmin-only" title="Click for data details">ℹ️</span></h3>
             <div class="stat-value" id="total-production">0</div>
             <div class="stat-label">Units This Month</div>
-            <canvas id="production-chart" style="width:100%;height:120px;"></canvas>
+            <div class="chart-container">
+              <canvas id="production-chart" style="width:100%;height:120px;"></canvas>
+            </div>
           </div>
-          <div class="dashboard-card" id="utilization-card">
-            <h3>Equipment Status</h3>
+          <div class="dashboard-card clickable-card" id="utilization-card" data-source="equipment" data-formula="Count by status: Available, In Use, Maintenance">
+            <h3>Equipment Status <span class="info-icon superadmin-only" title="Click for data details">ℹ️</span></h3>
             <div class="equipment-status">
               <div class="status-item">Available: <span id="available-equipment">0</span></div>
               <div class="status-item">In Use: <span id="busy-equipment">0</span></div>
               <div class="status-item">Maintenance: <span id="maintenance-equipment">0</span></div>
             </div>
           </div>
-          <div class="dashboard-card" id="stock-alerts-card">
-            <h3>Stock Alerts</h3>
+          <div class="dashboard-card clickable-card" id="stock-alerts-card" data-source="materials" data-formula="Filter materials where currentStock ≤ minimumStock">
+            <h3>Stock Alerts <span class="info-icon superadmin-only" title="Click for data details">ℹ️</span></h3>
             <div class="alerts-container" id="stock-alerts"></div>
           </div>
-          <div class="dashboard-card full-width">
-            <h3>Production Analytics</h3>
+          <div class="dashboard-card full-width clickable-card" data-source="production_plans" data-formula="Monthly aggregation of production quantities">
+            <h3>Production Analytics <span class="info-icon superadmin-only" title="Click for data details">ℹ️</span></h3>
             <div class="chart-container">
               <canvas id="analytics-chart" style="width:100%;height:200px;"></canvas>
             </div>
@@ -428,6 +430,38 @@
           <button class="btn btn--secondary modal-close" type="button">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Data Source Information Modal -->
+  <div class="modal hidden" id="data-info-modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="data-info-title">Data Source Information</h3>
+        <button class="modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div id="data-info-content">
+        <div class="info-section">
+          <h4>Data Source:</h4>
+          <p id="data-source-text"></p>
+        </div>
+        <div class="info-section">
+          <h4>Formula/Calculation:</h4>
+          <p id="data-formula-text"></p>
+        </div>
+        <div class="info-section">
+          <h4>Last Updated:</h4>
+          <p id="data-updated-text"></p>
+        </div>
+        <div class="info-section">
+          <h4>Record Count:</h4>
+          <p id="data-count-text"></p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn--secondary modal-close" type="button">Close</button>
+      </div>
     </div>
   </div>
 
